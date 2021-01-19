@@ -1,5 +1,6 @@
+#include <iostream>
 #include <stdio.h>
-#include <opencv2/opencv.hpp>
+#include "opencv2/opencv.hpp"
 #include "opencv2/cudafeatures2d.hpp"
 
 #include <cstdlib>
@@ -28,30 +29,30 @@ int main(int argc, char *argv[])
     printf("Hello!\n");
     cv::Mat image;
     image = cv::imread( argv[1], cv::IMREAD_GRAYSCALE);
-    image.convertTo(image, CV_32SC1);
-
+    image.convertTo(image, CV_16SC1);
+    //cv::resize(image,image,cv::Size(1024,1024));
     if ( !image.data )
     {
         printf("No image data \n");
         return -1;
     }
-    auto im = image.ptr<int>(0);
+    auto im = image.ptr<int16_t>(0);
 
     int *im_gpu;
     cudaHostRegister(im, image.total() * image.elemSize() , cudaHostRegisterMapped);
     gpuErrchk(cudaHostGetDevicePointer((void **)&im_gpu, (void *)im, 0));
-    Halide::Runtime::Buffer<int> input(nullptr, image.rows,image.cols);
+    Halide::Runtime::Buffer<int16_t> input(nullptr, image.rows,image.cols);
     input.device_wrap_native(halide_cuda_device_interface(),(uintptr_t)im_gpu);
     input.set_host_dirty();
     
-    cv::Mat image_out = cv::Mat::zeros(image.rows,image.cols,image.type());
-    auto im_out = image_out.ptr<int>(0);
+    cv::Mat image_out = cv::Mat::zeros(image.rows/32,image.cols/32,image.type());
+    auto im_out = image_out.ptr<int16_t>(0);
 
     int *im_out_gpu;
     cudaHostRegister(im_out, image_out.total() * image_out.elemSize() , cudaHostRegisterMapped);
     gpuErrchk(cudaHostGetDevicePointer((void **)&im_out_gpu, (void *)im_out, 0));
     
-    Halide::Runtime::Buffer<int> output(nullptr, image_out.rows,image_out.cols);
+    Halide::Runtime::Buffer<int16_t> output(nullptr, image_out.rows,image_out.cols);
     output.device_wrap_native(halide_cuda_device_interface(),(uintptr_t)im_out_gpu);
     
     
@@ -59,8 +60,8 @@ int main(int argc, char *argv[])
     //for (auto i=0; i < 100; ++i) {
     // 	gpu_only(input,input, output);
     //}
-    //gpu_only(input,input, output);
-    //output.device_sync();    
+    gpu_only(input,input, output);
+    output.device_sync();
     // Verify output.
     //for (int y = 0; y < image.cols; y++) {
     // 	for (int x = 0; x < image.rows; x++) {
@@ -70,21 +71,16 @@ int main(int argc, char *argv[])
     // 	    }
     // 	}
     //}
+    for (auto i=0; i<10; ++i) { //image_out.cols
+	for (auto j=0; j<10; ++j) { //image_out.rows
+	    std::cout << im_out[i+j*image_out.rows] << ", ";
+	}
+	std::cout << "\n";
+    }
+    std::cout << "cols: " << image_out.cols << "\n";
+    std::cout << "rows: " << image_out.rows << "\n";
 
-    cv::cuda::printShortCudaDeviceInfo(cv::cuda::getDevice());
-    cv::Mat tmp;
-    cv::cuda::GpuMat gpu_image;
-    image.convertTo(tmp,CV_8UC1);
-    gpu_image.upload(tmp);
-    cv::Ptr<cv::cuda::FastFeatureDetector> gpuFastDetector = cv::cuda::FastFeatureDetector::create(100, true, 2);
-
-    std::vector<cv::KeyPoint> gpuKeypoints;
-
-
-    cv::cuda::GpuMat gFrame;
-    gpuFastDetector->detect(gpu_image, gpuKeypoints);
-    
-    printf("Success!\n");
+    std::cout << "Success!" << "\n";
 
     return 0;
 }
