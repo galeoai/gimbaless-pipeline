@@ -27,10 +27,15 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 int main(int argc, char *argv[])
 {
     printf("Hello!\n");
-    cv::Mat image;
+    cv::Mat image,image1;
     image = cv::imread( argv[1], cv::IMREAD_GRAYSCALE);
     image.convertTo(image, CV_16SC1);
     //cv::resize(image,image,cv::Size(1024,1024));
+
+    image1 = cv::imread( argv[2], cv::IMREAD_GRAYSCALE);
+    image1.convertTo(image1, CV_16SC1);
+    //cv::resize(image1,image1,cv::Size(1024,1024));
+
     if ( !image.data )
     {
         printf("No image data \n");
@@ -44,15 +49,26 @@ int main(int argc, char *argv[])
     Halide::Runtime::Buffer<int16_t> input(nullptr, image.rows,image.cols);
     input.device_wrap_native(halide_cuda_device_interface(),(uintptr_t)im_gpu);
     input.set_host_dirty();
+
+    auto im1 = image1.ptr<int16_t>(0);
+
+    int *im1_gpu;
+    cudaHostRegister(im1, image1.total() * image1.elemSize() , cudaHostRegisterMapped);
+    gpuErrchk(cudaHostGetDevicePointer((void **)&im1_gpu, (void *)im1, 0));
+    Halide::Runtime::Buffer<int16_t> input1(nullptr, image1.rows,image1.cols);
+    input1.device_wrap_native(halide_cuda_device_interface(),(uintptr_t)im1_gpu);
+    input1.set_host_dirty();
+
     
-    cv::Mat image_out = cv::Mat::zeros(image.rows/32,image.cols/32,image.type());
-    auto im_out = image_out.ptr<int16_t>(0);
+    //cv::Mat image_out = cv::Mat::zeros(image.rows/32,image.cols/32,image.type()); 
+    cv::Mat image_out = cv::Mat::zeros(image.rows/32,image.cols/32,CV_32SC1);
+    auto im_out = image_out.ptr<int>(0);
 
     int *im_out_gpu;
     cudaHostRegister(im_out, image_out.total() * image_out.elemSize() , cudaHostRegisterMapped);
     gpuErrchk(cudaHostGetDevicePointer((void **)&im_out_gpu, (void *)im_out, 0));
     
-    Halide::Runtime::Buffer<int16_t> output(nullptr, image_out.rows,image_out.cols);
+    Halide::Runtime::Buffer<int> output(nullptr, image_out.rows,image_out.cols);
     output.device_wrap_native(halide_cuda_device_interface(),(uintptr_t)im_out_gpu);
     
     
@@ -60,7 +76,7 @@ int main(int argc, char *argv[])
     //for (auto i=0; i < 100; ++i) {
     // 	gpu_only(input,input, output);
     //}
-    gpu_only(input,input, output);
+    gpu_only(input,input1, output);
     output.device_sync();
     // Verify output.
     //for (int y = 0; y < image.cols; y++) {
@@ -71,8 +87,8 @@ int main(int argc, char *argv[])
     // 	    }
     // 	}
     //}
-    for (auto i=0; i<10; ++i) { //image_out.cols
-	for (auto j=0; j<10; ++j) { //image_out.rows
+    for (auto i=0; i<image_out.cols; ++i) { 
+	for (auto j=0; j<image_out.rows; ++j) { 
 	    std::cout << im_out[i+j*image_out.rows] << ", ";
 	}
 	std::cout << "\n";
