@@ -28,42 +28,42 @@ int main(int argc, char *argv[])
 {
     printf("Hello!\n");
     cv::Mat image,image1;
-    image = cv::imread( argv[1], cv::IMREAD_ANYDEPTH);
-    image1 = cv::imread( argv[2], cv::IMREAD_ANYDEPTH);
-
+    image = cv::imread(argv[1], cv::IMREAD_ANYDEPTH);
+    image1 = cv::imread(argv[2], cv::IMREAD_ANYDEPTH);
+    
     if ( !image.data )
     {
         printf("No image data \n");
         return -1;
     }
-    auto im = image.ptr<uint16_t>(0);
+    auto im = image.ptr<uint8_t>(0);
 
     int *im_gpu;
     cudaHostRegister(im, image.total() * image.elemSize() , cudaHostRegisterMapped);
     gpuErrchk(cudaHostGetDevicePointer((void **)&im_gpu, (void *)im, 0));
-    Halide::Runtime::Buffer<uint16_t> input(nullptr, image.rows,image.cols);
+    Halide::Runtime::Buffer<uint8_t> input(nullptr, image.rows,image.cols);
     input.device_wrap_native(halide_cuda_device_interface(),(uintptr_t)im_gpu);
     input.set_host_dirty();
 
-    auto im1 = image1.ptr<uint16_t>(0);
+    auto im1 = image1.ptr<uint8_t>(0);
 
     int *im1_gpu;
     cudaHostRegister(im1, image1.total() * image1.elemSize() , cudaHostRegisterMapped);
     gpuErrchk(cudaHostGetDevicePointer((void **)&im1_gpu, (void *)im1, 0));
-    Halide::Runtime::Buffer<uint16_t> input1(nullptr, image1.rows,image1.cols);
+    Halide::Runtime::Buffer<uint8_t> input1(nullptr, image1.rows,image1.cols);
     input1.device_wrap_native(halide_cuda_device_interface(),(uintptr_t)im1_gpu);
     input1.set_host_dirty();
 
     
     cv::Mat image_out = cv::Mat::zeros(image.rows,image.cols,image.type()); 
     //cv::Mat image_out = cv::Mat::zeros(image.rows/32,image.cols/32,CV_32SC1);
-    auto im_out = image_out.ptr<uint16_t>(0);
+    auto im_out = image_out.ptr<uint8_t>(0);
 
     int *im_out_gpu;
     cudaHostRegister(im_out, image_out.total() * image_out.elemSize() , cudaHostRegisterMapped);
     gpuErrchk(cudaHostGetDevicePointer((void **)&im_out_gpu, (void *)im_out, 0));
     
-    Halide::Runtime::Buffer<uint16_t> output(nullptr, image_out.rows,image_out.cols);
+    Halide::Runtime::Buffer<uint8_t> output(nullptr, image_out.rows,image_out.cols);
     output.device_wrap_native(halide_cuda_device_interface(),(uintptr_t)im_out_gpu);
     
     
