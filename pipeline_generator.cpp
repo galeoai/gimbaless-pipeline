@@ -1,12 +1,12 @@
 #include "Halide.h"
 #define PATCH_SIZE 32
-#define RADIUS 5
+#define RADIUS 1
 
 using namespace Halide;
 using namespace Halide::ConciseCasts; // for i32
 namespace {
 
-class GpuOnly : public Halide::Generator<GpuOnly> {
+class Gimbaless : public Halide::Generator<Gimbaless> {
 public:
     Input<Buffer<uint8_t>> image1{"image1", 2};
     Input<Buffer<uint8_t>> image2{"image2", 2};
@@ -30,7 +30,11 @@ public:
 				    0.1f*img2(x+shift(x/PATCH_SIZE,y/PATCH_SIZE)[0],
 					      y+shift(x/PATCH_SIZE,y/PATCH_SIZE)[1]));
 
-	    //cast<int>(shift(x,y)[1]);
+	// STMT output
+	//Func output_stmt;
+	//output_stmt(x,y) = output(x,y);
+	//output_stmt.compile_to_lowered_stmt("lowered_stmt.html", output_stmt.infer_arguments(), Halide::HTML);
+	
 		
         Target target = get_target();
 	if (target.has_gpu_feature()) {
@@ -44,4 +48,4 @@ public:
 
 }  // namespace
 
-HALIDE_REGISTER_GENERATOR(GpuOnly, gpu_only)
+HALIDE_REGISTER_GENERATOR(Gimbaless, process)

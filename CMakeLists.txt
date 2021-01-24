@@ -6,10 +6,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
-#set(CMAKE_CUDA_STANDARD 11)
-#set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-
-
 # OpenCV
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
@@ -24,11 +20,9 @@ add_executable(pipeline_generator.generator pipeline_generator.cpp)
 target_link_libraries(pipeline_generator.generator PRIVATE Halide::Generator Halide::Tools)
 
 # Filters
-add_halide_library(gpu_only FROM pipeline_generator.generator TARGETS host FEATURES cuda)
+add_halide_library(process FROM pipeline_generator.generator TARGETS host FEATURES cuda)
 
 
 add_executable(app main.cpp)
 
-#set_property(TARGET app PROPERTY CUDA_ARCHITECTURES 70)
-
-target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} gpu_only)
+target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
