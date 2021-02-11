@@ -1,5 +1,6 @@
 #include <iostream>
 #include <opencv2/core/utility.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/videoio.hpp>
 #include <stdio.h>
@@ -43,18 +44,11 @@ int main(int argc, char *argv[])
     cv::Mat image_out = cv::Mat::zeros(images[0].rows,images[0].cols,images[0].type());
 
     cv::VideoWriter out;
-    //out.open("appsrc ! videoconvert ! x264enc tune=zerolatency bitrate=5000 speed-preset=superfast ! rtph264pay ! udpsink host=10.4.20.12 port=5000 ",
-    // 	     0,
-    // 	     10,
-    // 	     image_out.size(),
-    // 	     false);
     out.open("appsrc ! videoconvert ! x264enc bitrate=5000 ! rtph264pay ! udpsink host=10.4.20.16 port=5000 ",
      	     0,
-     	     25,
+     	     30,
      	     image_out.size(),
      	     false);
-
-    //out.write(image_out);
 
     // benchmark
     //double auto_schedule_off = Halide::Tools::benchmark(2, 5, [&]() {
@@ -64,28 +58,32 @@ int main(int argc, char *argv[])
     //printf("Manual schedule: %gms\n", auto_schedule_off * 1e3);
     
     int i = 0;
-    auto tmp_image = images[0];
-    auto noise = images[0];
+    auto tmp_image = cv::Mat(images[0].rows,images[0].cols,images[0].type());
+    auto noise = cv::Mat(images[0].rows,images[0].cols,images[0].type());
     auto h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
     auto output	= Zerocopy::gpu<uint8_t>(image_out);
     //out.write(images[0]);
     while (true) {
-	cv::randu(noise, 0,30);
+	cv::randu(noise, 0, 100);
 	std::cout << i << "\n";
-	tmp_image = images[i];
+	tmp_image = images[i]+noise;
+	//i=1;
 	i++;
-
-	//h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
-	//process(h_image_in, h_image_in, output);
-	out.write(images[i]);
-
+	
+	//h_image_in = Zerocopy::gpu<uint8_t>(images[i]);
+	h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
+	process(h_image_in, output, output);
+	output.device_sync();
+	out.write(image_out);
+	
 	//out << tmp_image;
+	//cv::imshow("gimbaless", tmp_image);
+	//cv::waitKey(0);
 	//out << images[i];
-	usleep(1000*2);
-	i %= 5;
+	usleep(1000*20);
+	i %= images.size();
     }
     //std::cout << "Done!" << "\n";
-    
     //cv::imwrite("out.tiff", image_out);
 
     return 0;
