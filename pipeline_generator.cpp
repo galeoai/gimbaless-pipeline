@@ -1,6 +1,6 @@
 #include "Halide.h"
 #define PATCH_SIZE 32
-#define RADIUS 1
+#define RADIUS 5
 
 using namespace Halide;
 using namespace Halide::ConciseCasts; // for i32

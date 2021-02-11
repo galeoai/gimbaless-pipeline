@@ -5,7 +5,7 @@ gst-launch-1.0 videotestsrc ! video/x-raw, format=GRAY8 ! videoconvert ! x264enc
 #+end_src
 ** client   
 #+begin_src shell
-gst-launch-1.0 udpsrc port=5000 caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96" ! rtph264depay ! decodebin ! videoconvert ! autovideosink
+gst-launch-1.0 udpsrc port=5000 caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96" ! queue ! rtph264depay ! decodebin ! videoconvert ! autovideosink
 #+end_src
 
 

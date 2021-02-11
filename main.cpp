@@ -6,6 +6,7 @@
 #include "opencv2/opencv.hpp"
 
 #include <cstdlib>
+#include <unistd.h>
 
 // halide pipeline
 #include "HalideBuffer.h"
@@ -19,27 +20,41 @@
 int main(int argc, char *argv[])
 {
     // load images 
-    cv::Mat image1,image2;
-    image1 = cv::imread(argv[1], cv::IMREAD_ANYDEPTH);
-    image2 = cv::imread(argv[2], cv::IMREAD_ANYDEPTH);
-    //cv::Mat image_out = cv::Mat::zeros(image1.rows,image1.cols,image1.type());
-    cv::Mat image_out = cv::Mat::zeros(1024,1024,image1.type()); 
-    //std::vector<cv::String> filenames;
-    //cv::glob(strcat(argv[3],"/*.tif"), filenames);
-    //std::vector<cv::Mat> images;
-    //for (auto &file : filenames) {
-    //	std::cout << file << "\n";
-    //	images.push_back(cv::imread(file, cv::IMREAD_ANYDEPTH));
+    //cv::Mat image1,image2;
+    //image1 = cv::imread(argv[1], cv::IMREAD_GRAYSCALE); // 8bit
+    //image2 = cv::imread(argv[2], cv::IMREAD_GRAYSCALE);
+    //if ( !image1.data && !image2.data )
+    //{
+    //    printf("No images data \n");
+    //    return -1;
     //}
-    if ( !image1.data && !image2.data )
-    {
-        printf("No images data \n");
-        return -1;
+    //auto h_image1 = Zerocopy::gpu<uint8_t>(image1);
+    //auto h_image2 = Zerocopy::gpu<uint8_t>(image2);
+    //cv::Mat image_out = cv::Mat::zeros(image1.rows,image1.cols,image1.type());
+
+
+    std::vector<cv::String> filenames;
+    cv::glob(strcat(argv[1],"/*.tif"), filenames);
+    std::vector<cv::Mat> images;
+    for (auto &file : filenames) {
+	std::cout << file << "\n";
+	images.push_back(cv::imread(file, cv::IMREAD_GRAYSCALE));
     }
-    
-    auto h_image1 = Zerocopy::gpu<uint8_t>(image1);
-    auto h_image2 = Zerocopy::gpu<uint8_t>(image2);
-    auto output	  = Zerocopy::gpu<uint8_t>(image_out);
+    cv::Mat image_out = cv::Mat::zeros(images[0].rows,images[0].cols,images[0].type());
+
+    cv::VideoWriter out;
+    //out.open("appsrc ! videoconvert ! x264enc tune=zerolatency bitrate=5000 speed-preset=superfast ! rtph264pay ! udpsink host=10.4.20.12 port=5000 ",
+    // 	     0,
+    // 	     10,
+    // 	     image_out.size(),
+    // 	     false);
+    out.open("appsrc ! videoconvert ! x264enc bitrate=5000 ! rtph264pay ! udpsink host=10.4.20.16 port=5000 ",
+     	     0,
+     	     25,
+     	     image_out.size(),
+     	     false);
+
+    //out.write(image_out);
 
     // benchmark
     //double auto_schedule_off = Halide::Tools::benchmark(2, 5, [&]() {
@@ -47,27 +62,31 @@ int main(int argc, char *argv[])
     // 	output.device_sync();
     //});
     //printf("Manual schedule: %gms\n", auto_schedule_off * 1e3);
-    // 
-    //cv::imwrite("out.tiff", image_out);
-
-    cv::VideoWriter out;
-    out.open("appsrc ! videoconvert ! x264enc tune=zerolatency bitrate=500 speed-preset=superfast ! rtph264pay ! udpsink host=10.4.20.12 port=5000 ",
-	     0,
-	     16,
-	     cv::Size (1024, 1024),
-	     false);
     
-    out.write(image_out);
+    int i = 0;
+    auto tmp_image = images[0];
+    auto noise = images[0];
+    auto h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
+    auto output	= Zerocopy::gpu<uint8_t>(image_out);
+    //out.write(images[0]);
     while (true) {
-	//cv::imshow("output",image_out);
-	//out.write(image_out);
-	cv::randu(image_out, 0,255);
-	out.write(image1);
-	char c=(char)cv::waitKey(25);
-	if(c==27)
-	    break;
+	cv::randu(noise, 0,30);
+	std::cout << i << "\n";
+	tmp_image = images[i];
+	i++;
+
+	//h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
+	//process(h_image_in, h_image_in, output);
+	out.write(images[i]);
+
+	//out << tmp_image;
+	//out << images[i];
+	usleep(1000*2);
+	i %= 5;
     }
     //std::cout << "Done!" << "\n";
+    
+    //cv::imwrite("out.tiff", image_out);
 
     return 0;
 }
