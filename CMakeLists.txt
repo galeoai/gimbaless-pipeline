@@ -26,3 +26,13 @@ add_halide_library(process FROM pipeline_generator.generator TARGETS host FEATUR
 add_executable(app main.cpp)
 
 target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
+
+
+# KAYA setup
+if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
+    DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH} )
+  add_executable(kaya_test test/kaya_test.cpp)
+  target_include_directories(kaya_test PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
+  target_link_libraries(kaya_test $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so)
+endif()
+
