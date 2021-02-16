@@ -64,8 +64,8 @@ int main(int argc, char *argv[])
     auto output	= Zerocopy::gpu<uint8_t>(image_out);
     //out.write(images[0]);
     while (true) {
-	cv::randu(noise, 0, 100);
-	std::cout << i << "\n";
+	cv::randu(noise, -30, 30);
+	//std::cout << i << "\n";
 	tmp_image = images[i]+noise;
 	//i=1;
 	i++;
