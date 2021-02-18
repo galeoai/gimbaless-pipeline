@@ -1,7 +1,10 @@
 #include "KYFGLib.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> // for memcpy
+#include <cstdlib> //for uint8_t
+#include "opencv2/opencv.hpp"
 
 void Stream_callback_func(void* userContext, STREAM_HANDLE streamHandle)
 {
@@ -25,20 +28,13 @@ void Stream_callback_func(void* userContext, STREAM_HANDLE streamHandle)
     if(KYFALSE == copyingDataFlag)
     {
         copyingDataFlag = KYTRUE;
-        data = (void*)realloc(data, (size_t)buffSize); 		// allocate size for local buffer
-        if(0 == data)
+	
+        if(0 == userContext)
         {
             return;
         }
         printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE ", total frames:%lld        ", streamHandle, buffIndex, totalFrames);
-        memcpy(data, buffData, (size_t)buffSize);			// copy data to local buffer
-        //... Show Image with data ...
-	//for (auto i=0; i < 640; ++i) {
-	//    for (auto j = 0; j < 480; ++j) {
-	// 	printf("%d|",((char*)data)[i*480+j]);
-	//    }
-	//    printf("\n");
-	//}
+        memcpy(userContext, buffData, (size_t)buffSize); // copy data to local buffer	
         copyingDataFlag = KYFALSE;
     }
 }
@@ -56,6 +52,7 @@ int main(int argc, char *argv[])
     int bLoopInProgress = 0;
     KYFGLib_InitParameters kyInit;
     int infosize = 0;
+    auto image = cv::Mat(720,1920,CV_8UC1);
 
     kyInit.version = 2;
     kyInit.concurrency_mode = 0;
@@ -85,25 +82,30 @@ int main(int argc, char *argv[])
 	printf("Camera isn't connected\n");
 	return 1;
     }
-    KYFG_CameraCallbackRegister(camHandleArray[0], Stream_callback_func, 0);
-    KYFG_SetCameraValueInt(camHandleArray[0], "Width", 640);
-    KYFG_SetCameraValueInt(camHandleArray[0], "Height", 480);
+    KYFG_CameraCallbackRegister(camHandleArray[0], Stream_callback_func, (void*)image.ptr<uint8_t>());
+    KYFG_SetCameraValueInt(camHandleArray[0], "Width", 1920);
+    KYFG_SetCameraValueInt(camHandleArray[0], "Height", 720);
     KYFG_SetCameraValueEnum_ByValueName(camHandleArray[0], "PixelFormat", "Mono8");
     if(FGSTATUS_OK != KYFG_StreamCreateAndAlloc(camHandleArray[0], &streamHandle , 16, 0)){
 	printf("Failed to allocate buffer.\n");
 	return 1;
     }
     KYFG_CameraStart(camHandleArray[0], streamHandle, 0);
-    
+
+    while (true) {
+	// Press  ESC on keyboard to exit
+    	cv::imshow( "image", image );
+	char c=(char)cv::waitKey(25);
+	if(c==27) break;
+    }
+
 
     KYFG_CameraStop(camHandleArray[0]); //close camera
     if (FGSTATUS_OK != KYFG_Close(handle)){
 	printf("wasn't able to close grabber #%d\n", 1);
 	return 1; 
     }// Close the selected device and unregisters all associated routines
-    for (int i = 0; i < 100; ++i){
-	
-    }
-    printf("Success!\n");
+    
+    printf("\nSuccess!\n");
     return 0;
 }
