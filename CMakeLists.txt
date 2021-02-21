@@ -16,23 +16,26 @@ find_package(Halide REQUIRED)
 
 
 # Generator
-add_executable(pipeline_generator.generator pipeline_generator.cpp)
+add_executable(pipeline_generator.generator src/pipeline_generator.cpp)
 target_link_libraries(pipeline_generator.generator PRIVATE Halide::Generator Halide::Tools)
 
 # Filters
 add_halide_library(process FROM pipeline_generator.generator TARGETS host FEATURES cuda)
 
 
-add_executable(app main.cpp)
+add_executable(app src/main.cpp)
 
 target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
 
-
+# testing 
+enable_testing()
 # KAYA setup
 if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
     DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH} )
   add_executable(kaya_test test/kaya_test.cpp)
   target_include_directories(kaya_test PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
   target_link_libraries(kaya_test $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS})
+  
+  add_test(KAYA kaya_test)
 endif()
 

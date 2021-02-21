@@ -13,7 +13,7 @@
 #include "HalideBuffer.h"
 #include "HalideRuntime.h"
 #include "HalideRuntimeCuda.h"
-#include "halide_benchmark.h"
+//#include "halide_benchmark.h"
 #include "process.h"
 
 #include "zerocopy.h"
