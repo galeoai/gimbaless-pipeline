@@ -4,7 +4,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/videoio.hpp>
 #include <stdio.h>
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
 
 #include <cstdlib>
 #include <unistd.h>

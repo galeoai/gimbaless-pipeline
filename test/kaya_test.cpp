@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h> // for memcpy
 #include <cstdlib> //for uint8_t
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
 
 void Stream_callback_func(void* userContext, STREAM_HANDLE streamHandle)
 {
