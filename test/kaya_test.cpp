@@ -92,12 +92,12 @@ int main(int argc, char *argv[])
     }
     KYFG_CameraStart(camHandleArray[0], streamHandle, 0);
 
-    while (true) {
-	// Press  ESC on keyboard to exit
-    	cv::imshow( "image", image );
-	char c=(char)cv::waitKey(25);
-	if(c==27) break;
-    }
+    //while (true) {
+    // 	// Press  ESC on keyboard to exit
+    // 	cv::imshow( "image", image );
+    // 	char c=(char)cv::waitKey(25);
+    // 	if(c==27) break;
+    //}
 
 
     KYFG_CameraStop(camHandleArray[0]); //close camera

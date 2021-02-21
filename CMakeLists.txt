@@ -29,6 +29,12 @@ target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
 
 # testing 
 enable_testing()
+#pipline and timing
+add_executable(pipline_test test/pipline_timing.cpp)
+
+target_link_libraries(pipline_test ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
+add_test(timimg pipline_test ../test/data/1.tif ../test/data/2.tif) #FIXME
+
 # KAYA setup
 if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
     DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH} )
@@ -38,4 +44,5 @@ if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
   
   add_test(KAYA kaya_test)
 endif()
+
 
