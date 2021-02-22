@@ -5,7 +5,6 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
 #include <stdio.h>
-
 #include <cstdlib>
 #include <unistd.h>
 
