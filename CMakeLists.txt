@@ -35,6 +35,10 @@ add_executable(test_pipline test/pipline_timing.cpp)
 target_link_libraries(test_pipline ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
 add_test(timimg test_pipline ../test/data/1.tif ../test/data/2.tif) #FIXME
 
+add_executable(test_read_nuc test/read_nuc.cpp src/nuc.cpp)
+target_link_libraries(test_read_nuc ${OpenCV_LIBS})
+add_test(NUC test_read_nuc ../test/data/nuc_tables.h5)
+
 # KAYA setup
 if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
     DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH} )
