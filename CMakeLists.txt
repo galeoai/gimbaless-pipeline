@@ -42,7 +42,7 @@ add_test(NUC test_read_nuc ../test/data/nuc_tables.h5)
 # KAYA setup
 if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
     DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH} )
-  add_executable(test_kaya test/kaya.cpp)
+  add_executable(test_kaya test/kaya.cpp src/kaya_interface.cpp)
   target_include_directories(test_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
   target_link_libraries(test_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS})
   

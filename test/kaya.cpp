@@ -1,4 +1,4 @@
-#include "KYFGLib.h"
+#include "../src/kaya_interface.h"
 
 #include <cstdlib>  //for uint8_t
 #include <opencv2/opencv.hpp>
@@ -6,41 +6,23 @@
 #include <stdlib.h>
 #include <string.h>  // for memcpy
 
-void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
-    static void *data = 0;
-    static KYBOOL copyingDataFlag = KYFALSE;
-    long long totalFrames = 0, buffSize = 0;
-    int buffIndex;
-    void *buffData;
-
-    if (0 == streamHandle)  // callback with indicator for acquisition stop
-    {
-        copyingDataFlag = KYFALSE;
-        return;
-    }
-
-    totalFrames = KYFG_GetGrabberValueInt(streamHandle, "RXFrameCounter");
-    buffSize = KYFG_StreamGetSize(streamHandle);  // get buffer size
-    buffIndex = KYFG_StreamGetFrameIndex(streamHandle);
-    buffData =
-        KYFG_StreamGetPtr(streamHandle, buffIndex);  // get pointer of buffer data
-
-    if (KYFALSE == copyingDataFlag) {
-        copyingDataFlag = KYTRUE;
-
-        if (0 == userContext) {
-            return;
-        }
-        printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
-               ", total frames:%lld        ",
-               streamHandle, buffIndex, totalFrames);
-        memcpy(userContext, buffData,
-               (size_t)buffSize);  // copy data to local buffer
-        copyingDataFlag = KYFALSE;
-    }
-}
 
 int main(int argc, char *argv[]) {
+    kaya_config config;
+    config.width = 1024;
+    config.height = 1024;
+    config.grabberIndex = 1;
+    config.cameraIndex = 0;
+    config.image = 255*cv::Mat::ones(1024,1024,CV_8UC1);
+    setup(config);
+    start(config);
+    while(true){
+	cv::imshow( "image", config.image );
+	char c=(char)cv::waitKey(25);
+	if(c==27) break;
+    };
+    stop(config);
+    /*
     FGHANDLE handle;
     int grabberIndex = 0, i;
     STREAM_HANDLE streamHandle = 0;
@@ -92,19 +74,19 @@ int main(int argc, char *argv[]) {
     }
     KYFG_CameraStart(camHandleArray[0], streamHandle, 0);
 
-    // while (true) {
-    // 	// Press  ESC on keyboard to exit
-    // 	cv::imshow( "image", image );
-    // 	char c=(char)cv::waitKey(25);
-    // 	if(c==27) break;
-    //}
+    while (true) {
+	// Press  ESC on keyboard to exit
+	//cv::imshow( "image", image );
+	//char c=(char)cv::waitKey(25);
+	//if(c==27) break;
+    }
 
     KYFG_CameraStop(camHandleArray[0]);  // close camera
     if (FGSTATUS_OK != KYFG_Close(handle)) {
         printf("wasn't able to close grabber #%d\n", 1);
         return 1;
     }  // Close the selected device and unregisters all associated routines
-
+    */
     printf("\nSuccess!\n");
     return 0;
 }
