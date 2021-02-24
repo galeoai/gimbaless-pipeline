@@ -26,12 +26,12 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
         if (0 == userContext) {
             return;
         }
-	printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
+        printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
                ", total frames:%lld        ",
-	       streamHandle, buffIndex, config->totalFrames);
-	cv::Mat image(config->height, config->width, CV_8UC1, buffData);
+               streamHandle, buffIndex, config->totalFrames);
+        cv::Mat image(config->height, config->width, CV_8UC1, buffData);
         image.copyTo(config->image);
-	//config->image = cv::Mat::zeros(1024,1024,CV_8UC1);
+        //config->image = cv::Mat::zeros(1024,1024,CV_8UC1);
         copyingDataFlag = KYFALSE;
     }
 }
@@ -64,31 +64,30 @@ bool setup(kaya_config &config) {
         printf("Camera isn't connected\n");
         return false;
     }
-    std::cout << KYFG_SetCameraValueInt(config.camHandleArray[config.cameraIndex],
-			   "Width",
-			   config.width);
-    std::cout << "\n";
+    KYFG_SetCameraValueInt(config.camHandleArray[config.cameraIndex],
+                           "Width",
+                           config.width);
+    KYFG_SetCameraValueInt(config.camHandleArray[config.cameraIndex],
+                           "Height",
+                           config.height);
+    KYFG_SetCameraValueFloat(config.camHandleArray[config.cameraIndex],
+                             "FrameRate",
+                             config.fps);
 
-    std::cout << KYFG_SetCameraValueInt(config.camHandleArray[config.cameraIndex],
-			   "Height",
-			   config.height);
-    std::cout << "\n";
-    std::cout << KYFG_SetCameraValueEnum_ByValueName(config.camHandleArray[config.cameraIndex],
-					"PixelFormat",
+    KYFG_SetCameraValueEnum_ByValueName(config.camHandleArray[config.cameraIndex],
+                                        "PixelFormat",
                                         config.pixelFormat.c_str());
-    std::cout << "\n";
-    std::cout << KYFG_CameraCallbackRegister(config.camHandleArray[0],
+
+    KYFG_CameraCallbackRegister(config.camHandleArray[0],
                                 Stream_callback_func,
                                 (void *)&config);
-    std::cout << "\n";
-    
-    return true; 
+    return true;
 }
 
 bool start(kaya_config &config) {
     if (FGSTATUS_OK !=
         KYFG_StreamCreateAndAlloc(config.camHandleArray[config.cameraIndex],
-				  &config.streamHandle, 16, 0)) {
+                                  &config.streamHandle, 16, 0)) {
         printf("Failed to allocate buffer.\n");
         return false;
     }
