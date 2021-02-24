@@ -8,7 +8,7 @@ struct kaya_config {
     long long width = 0;
     long long height = 0;
     std::string pixelFormat = "Mono8";
-    float fps = 20.0;
+    double fps = 25;
     void (*prosses)();
     cv::Mat image;
     long long totalFrames =0;

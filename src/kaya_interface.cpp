@@ -70,9 +70,12 @@ bool setup(kaya_config &config) {
     KYFG_SetCameraValueInt(config.camHandleArray[config.cameraIndex],
                            "Height",
                            config.height);
+
     KYFG_SetCameraValueFloat(config.camHandleArray[config.cameraIndex],
-                             "FrameRate",
+                             "AcquisitionFrameRate",
                              config.fps);
+
+    config.fps =  KYFG_GetCameraValueFloat(config.camHandleArray[config.cameraIndex], "AcquisitionFrameRate");
 
     KYFG_SetCameraValueEnum_ByValueName(config.camHandleArray[config.cameraIndex],
                                         "PixelFormat",

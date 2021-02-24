@@ -13,6 +13,7 @@ int main(int argc, char *argv[]) {
     config.height = 1024;
     config.grabberIndex = 0;
     config.cameraIndex = 0;
+    config.fps = 25;
     config.image = 255*cv::Mat::ones(1024,1024,CV_8UC1);
     setup(config);
     start(config);
