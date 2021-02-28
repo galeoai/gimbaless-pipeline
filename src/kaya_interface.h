@@ -1,17 +1,25 @@
 #ifndef KAYA_INTERFACE_H
 #define KAYA_INTERFACE_H
 #include "KYFGLib.h"
+#include <functional>
 #include <opencv2/opencv.hpp>
 #include <string>
+
+struct alg_args {
+    cv::Mat IIR;
+    int height;
+    int width;
+};
 
 struct kaya_config {
     long long width = 0;
     long long height = 0;
     std::string pixelFormat = "Mono8";
     double fps = 25;
-    void (*prosses)();
+    alg_args args;
+    std::function<void(alg_args, void *image)> process;
     cv::Mat image;
-    long long totalFrames =0;
+    long long totalFrames = 0;
     long long buffSize = 0;
     int grabberIndex = 0;
     int cameraIndex = 0;
@@ -20,10 +28,8 @@ struct kaya_config {
     CAMHANDLE camHandleArray[KY_MAX_CAMERAS];
 };
 
-
 bool setup(kaya_config &config);
 bool start(kaya_config &config);
 bool stop(kaya_config &config);
-
 
 #endif

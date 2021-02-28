@@ -29,9 +29,12 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
         printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
                ", total frames:%lld        ",
                streamHandle, buffIndex, config->totalFrames);
-        cv::Mat image(config->height, config->width, CV_8UC1, buffData);
-        image.copyTo(config->image);
-        //config->image = cv::Mat::zeros(1024,1024,CV_8UC1);
+	config->process(config->args,buffData);
+
+        if (config->totalFrames % 10 == 0) {
+	    config->args.IIR.copyTo(config->image);
+	}
+
         copyingDataFlag = KYFALSE;
     }
 }
@@ -49,7 +52,7 @@ bool setup(kaya_config &config) {
     int infosize = 0;
     KY_DeviceScan(&infosize);  // Retrieve the number of virtual and hardware
     if ((config.handle = KYFG_Open(config.grabberIndex)) != -1) {
-        printf("FG 1 was connected successfully\n");
+        printf("FG %d was connected successfully\n", config.grabberIndex);
     } else {
         printf("Couldn't connect to FG\n");
         return false;
@@ -75,13 +78,13 @@ bool setup(kaya_config &config) {
                              "AcquisitionFrameRate",
                              config.fps);
 
-    config.fps =  KYFG_GetCameraValueFloat(config.camHandleArray[config.cameraIndex], "AcquisitionFrameRate");
+    config.fps = KYFG_GetCameraValueFloat(config.camHandleArray[config.cameraIndex], "AcquisitionFrameRate");
 
     KYFG_SetCameraValueEnum_ByValueName(config.camHandleArray[config.cameraIndex],
                                         "PixelFormat",
                                         config.pixelFormat.c_str());
 
-    KYFG_CameraCallbackRegister(config.camHandleArray[0],
+    KYFG_CameraCallbackRegister(config.camHandleArray[config.cameraIndex],
                                 Stream_callback_func,
                                 (void *)&config);
     return true;
@@ -90,7 +93,7 @@ bool setup(kaya_config &config) {
 bool start(kaya_config &config) {
     if (FGSTATUS_OK !=
         KYFG_StreamCreateAndAlloc(config.camHandleArray[config.cameraIndex],
-                                  &config.streamHandle, 16, 0)) {
+                                  &config.streamHandle, 32, 0)) {
         printf("Failed to allocate buffer.\n");
         return false;
     }

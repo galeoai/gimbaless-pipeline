@@ -44,7 +44,7 @@ if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
     DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH} )
   add_executable(test_kaya test/kaya.cpp src/kaya_interface.cpp)
   target_include_directories(test_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
-  target_link_libraries(test_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS})
+  target_link_libraries(test_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} ${CUDA_LIBRARIES} process) # TODO: remove cuda add process
   
   add_test(KAYA test_kaya)
 endif()
