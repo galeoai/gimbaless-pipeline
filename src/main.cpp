@@ -8,10 +8,13 @@
 #include <cstdlib>
 #include <unistd.h>
 
+// kaya interface
+#include "kaya_interface.h"
+
 // halide pipeline
 #include "process.h"
-
 #include "zerocopy.h"
+
 
 int main(int argc, char *argv[]) {
     std::vector<cv::String> filenames;
@@ -29,6 +32,12 @@ int main(int argc, char *argv[]) {
              30,
              image_out.size(),
              false);
+
+    //IIR_alg iir;
+    //iir.IIR = cv::Mat::zeros(1024, 1024, CV_8UC1);
+    //iir.height = 1024;
+    //iir.width = 1024;
+    //config.process = iir;
 
     int i = 0;
     auto tmp_image = cv::Mat(images[0].rows, images[0].cols, images[0].type());
@@ -48,6 +57,7 @@ int main(int argc, char *argv[]) {
         process(h_image_in, output, output);
         output.device_sync();
         out.write(image_out);
+
 
         //out << tmp_image;
         //cv::imshow("gimbaless", tmp_image);

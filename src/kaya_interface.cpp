@@ -28,7 +28,8 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
         printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
                ", total frames:%lld        ",
                streamHandle, buffIndex, config->totalFrames);
-        auto result = config->process(buffData);
+	cv::Mat image(config->height, config->width, CV_8UC1, buffData); // TODO: make CV_8UC1 depend on the pixelformat
+        auto result = config->process(image);
         if (config->totalFrames % 10 == 0) {
             result.copyTo(config->image);
         }

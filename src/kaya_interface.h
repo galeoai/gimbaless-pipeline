@@ -11,7 +11,7 @@ struct kaya_config {
     std::string pixelFormat = "Mono8";
     double fps = 25;
     void* args;
-    std::function<cv::Mat(void *image)> process = nullptr;
+    std::function<cv::Mat(cv::Mat)> process = nullptr;
     cv::Mat image;
     long long totalFrames = 0;
     long long buffSize = 0;

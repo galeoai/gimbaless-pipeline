@@ -22,10 +22,10 @@ target_link_libraries(pipeline_generator.generator PRIVATE Halide::Generator Hal
 # Filters
 add_halide_library(process FROM pipeline_generator.generator TARGETS host FEATURES cuda)
 
+add_executable(app src/main.cpp src/kaya_interface.cpp)
+target_include_directories(app PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
 
-add_executable(app src/main.cpp)
-
-target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
+target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} process $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so)
 
 # testing 
 enable_testing()
@@ -42,9 +42,15 @@ add_test(NUC test_read_nuc ../test/data/nuc_tables.h5)
 # KAYA setup
 if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
     DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH} )
+  # interface test 
   add_executable(test_kaya test/kaya.cpp src/kaya_interface.cpp)
   target_include_directories(test_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
-  target_link_libraries(test_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} ${CUDA_LIBRARIES} process) # TODO: remove cuda add process
+  target_link_libraries(test_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS})
+  # interface example
+    add_executable(example_kaya test/example_kaya.cpp src/kaya_interface.cpp)
+  target_include_directories(example_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
+  target_link_libraries(example_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} process)
+
   
   add_test(KAYA test_kaya)
 endif()
