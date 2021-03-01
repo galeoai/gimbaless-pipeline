@@ -6,7 +6,9 @@
 #include <string>
 
 void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
+    if (0 == userContext) { return; }
     auto config = (kaya_config *)userContext;
+
     static KYBOOL copyingDataFlag = KYFALSE;
     void *buffData;
     if (0 == streamHandle)  // callback with indicator for acquisition stop
@@ -19,20 +21,17 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
     auto buffIndex = KYFG_StreamGetFrameIndex(streamHandle);
     buffData =
         KYFG_StreamGetPtr(streamHandle, buffIndex);  // get pointer of buffer data
-
+    if (nullptr == config->process) { return; }
     if (KYFALSE == copyingDataFlag) {
         copyingDataFlag = KYTRUE;
 
-        if (0 == userContext) {
-            return;
-        }
         printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
                ", total frames:%lld        ",
                streamHandle, buffIndex, config->totalFrames);
-	auto result = config->process(buffData);
+        auto result = config->process(buffData);
         if (config->totalFrames % 10 == 0) {
-	    result.copyTo(config->image);
-	}
+            result.copyTo(config->image);
+        }
 
         copyingDataFlag = KYFALSE;
     }
