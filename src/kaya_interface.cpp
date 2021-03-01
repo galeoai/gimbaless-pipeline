@@ -29,10 +29,9 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
         printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
                ", total frames:%lld        ",
                streamHandle, buffIndex, config->totalFrames);
-	config->process(config->args,buffData);
-
+	auto result = config->process(buffData);
         if (config->totalFrames % 10 == 0) {
-	    config->args.IIR.copyTo(config->image);
+	    result.copyTo(config->image);
 	}
 
         copyingDataFlag = KYFALSE;

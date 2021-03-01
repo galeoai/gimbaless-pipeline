@@ -5,19 +5,13 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 
-struct alg_args {
-    cv::Mat IIR;
-    int height;
-    int width;
-};
-
 struct kaya_config {
     long long width = 0;
     long long height = 0;
     std::string pixelFormat = "Mono8";
     double fps = 25;
-    alg_args args;
-    std::function<void(alg_args, void *image)> process;
+    void* args;
+    std::function<cv::Mat(void *image)> process;
     cv::Mat image;
     long long totalFrames = 0;
     long long buffSize = 0;
