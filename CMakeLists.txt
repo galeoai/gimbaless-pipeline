@@ -41,18 +41,22 @@ add_test(NUC test_read_nuc ../test/data/nuc_tables.h5)
 
 # KAYA setup
 if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
-    DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH} )
+    DEFINED ENV{KAYA_VISION_POINT_INCLUDE_PATH})
   # interface test 
   add_executable(test_kaya test/kaya.cpp src/kaya_interface.cpp)
   target_include_directories(test_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
   target_link_libraries(test_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS})
-  # interface example
-    add_executable(example_kaya test/example_kaya.cpp src/kaya_interface.cpp)
-  target_include_directories(example_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
-  target_link_libraries(example_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} process)
-
-  
   add_test(KAYA test_kaya)
+  # interface example
+  add_executable(example_kaya test/example_kaya.cpp src/kaya_interface.cpp)
+  target_include_directories(example_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
+  target_link_libraries(example_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS})
+
+  # blur experiment
+  add_executable(blur_exp src/blur_exp.cpp src/kaya_interface.cpp)
+  target_include_directories(blur_exp PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
+  target_link_libraries(blur_exp $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
+  
 endif()
 
 
