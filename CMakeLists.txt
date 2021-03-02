@@ -22,10 +22,10 @@ target_link_libraries(pipeline_generator.generator PRIVATE Halide::Generator Hal
 # Filters
 add_halide_library(process FROM pipeline_generator.generator TARGETS host FEATURES cuda)
 
-add_executable(app src/main.cpp src/kaya_interface.cpp)
-target_include_directories(app PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
+add_executable(app src/main.cpp)
+target_include_directories(app PRIVATE)
 
-target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} process $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so)
+target_link_libraries(app ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
 
 # testing 
 enable_testing()

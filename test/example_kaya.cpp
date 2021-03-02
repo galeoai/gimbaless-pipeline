@@ -3,21 +3,6 @@
 #include <functional>
 #include <opencv2/opencv.hpp>
 
-struct IIR_alg {
-    cv::Mat IIR;
-    int height;
-    int width;
-    cv::Mat operator()(void* input) {
-	cv::Mat image(height, width, CV_8UC1, input);
-	auto h_image_in = Zerocopy::gpu<uint8_t>(image);
-	auto output = Zerocopy::gpu<uint8_t>(IIR);
-	process(h_image_in, output, output);
-	output.device_sync();
-	return IIR;
-    }
-};
-
-
 cv::Mat bypass(cv::Mat image){return image;}
 
 int main(int argc, char *argv[]) {

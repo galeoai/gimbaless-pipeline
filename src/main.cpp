@@ -8,9 +8,6 @@
 #include <cstdlib>
 #include <unistd.h>
 
-// kaya interface
-#include "kaya_interface.h"
-
 // halide pipeline
 #include "process.h"
 #include "zerocopy.h"
@@ -18,6 +15,10 @@
 
 int main(int argc, char *argv[]) {
     std::vector<cv::String> filenames;
+    if (argc == 1) {
+	std::cout << "usage ./app <dir> " << "\n";
+	return 0;
+    }
     cv::glob(strcat(argv[1], "/*.tif"), filenames);
     std::vector<cv::Mat> images;
     for (auto &file : filenames) {
@@ -32,12 +33,6 @@ int main(int argc, char *argv[]) {
              30,
              image_out.size(),
              false);
-
-    //IIR_alg iir;
-    //iir.IIR = cv::Mat::zeros(1024, 1024, CV_8UC1);
-    //iir.height = 1024;
-    //iir.width = 1024;
-    //config.process = iir;
 
     int i = 0;
     auto tmp_image = cv::Mat(images[0].rows, images[0].cols, images[0].type());
@@ -66,7 +61,7 @@ int main(int argc, char *argv[]) {
         usleep(1000 * 20);
         i %= images.size();
     }
-    //std::cout << "Done!" << "\n";
+    std::cout << "Done!" << "\n";
     //cv::imwrite("out.tiff", image_out);
 
     return 0;
