@@ -28,7 +28,7 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
         printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
                ", total frames:%lld        ",
                streamHandle, buffIndex, config->totalFrames);
-	cv::Mat image(config->height, config->width, CV_8UC1, buffData); // TODO: make CV_8UC1 depend on the pixelformat
+        cv::Mat image(config->height, config->width, CV_8UC1, buffData);  // TODO: make CV_8UC1 depend on the pixelformat
         auto result = config->process(image);
         if (config->totalFrames % 10 == 0) {
             result.copyTo(config->image);
@@ -72,6 +72,14 @@ bool setup(kaya_config &config) {
     KYFG_SetCameraValueInt(config.camHandleArray[config.cameraIndex],
                            "Height",
                            config.height);
+
+    KYFG_SetCameraValueInt(config.camHandleArray[config.cameraIndex],
+                           "OffsetX",
+                           config.offsetx);
+
+    KYFG_SetCameraValueInt(config.camHandleArray[config.cameraIndex],
+                           "OffsetY",
+                           config.offsety);
 
     KYFG_SetCameraValueFloat(config.camHandleArray[config.cameraIndex],
                              "AcquisitionFrameRate",
