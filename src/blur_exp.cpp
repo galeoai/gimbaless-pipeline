@@ -4,6 +4,7 @@
 #include <opencv2/core/utility.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
 #include <stdio.h>
@@ -26,7 +27,7 @@ struct IIR_alg {
         auto output = Zerocopy::gpu<uint8_t>(IIR);
         process(h_image_in, output, output);
         output.device_sync();
-	image=IIR;
+	IIR.copyTo(image);
         return;
     }
 };
@@ -35,9 +36,9 @@ struct IIR_alg {
 ///////////////////////////////////////////////////////////////////////////////
 struct simple {
     cv::Mat IIR;
-    void operator()(cv::Mat image, cv::Mat out) {
-        cv::addWeighted(IIR, 0.9, image, 0.1, 0.0, IIR);
-	out=IIR;
+    void operator()(cv::Mat image) {
+        cv::addWeighted(IIR, 0.7, image, 0.3, 0.0, IIR);
+	IIR.copyTo(image);
         return;
     }
 };
@@ -61,21 +62,23 @@ int main(int argc, char *argv[]) {
     config.fps = 300;
     config.image = cv::Mat::zeros(config.width, config.height, CV_8UC1);
 
-    IIR_alg iir;
-    iir.IIR = cv::Mat::zeros(config.width, config.height, CV_8UC1);
-    config.process = iir;
+    //IIR_alg iir;
+    //iir.IIR = cv::Mat::zeros(config.width, config.height, CV_8UC1);
+    //config.process = iir;
     //config.process = bypass;
-    //simple s;
-    //s.IIR = cv::Mat::zeros(config.width, config.height, CV_8UC1);
-    //config.process = s;
+    simple s;
+    s.IIR = cv::Mat::zeros(config.width, config.height, CV_8UC1);
+    config.process = s;
 
     setup(config);
     std::cout << "exposure: " << config.exposure << "\n";
 
     start(config);
 
+    auto dis = config.image.clone();
     while (true) {
-        cv::imshow("image", config.image);
+	cv::equalizeHist(config.image, dis);
+        cv::imshow("image", dis);
         char c = (char)cv::waitKey(10);
         if (c == 27) break;
     }
