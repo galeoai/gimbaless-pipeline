@@ -21,12 +21,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 struct IIR_alg {
     cv::Mat IIR;
-    cv::Mat operator()(cv::Mat image) {
+    void operator()(cv::Mat image) {
         auto h_image_in = Zerocopy::gpu<uint8_t>(image);
         auto output = Zerocopy::gpu<uint8_t>(IIR);
         process(h_image_in, output, output);
         output.device_sync();
-        return IIR;
+	image=IIR;
+        return;
     }
 };
 ///////////////////////////////////////////////////////////////////////////////
@@ -34,16 +35,17 @@ struct IIR_alg {
 ///////////////////////////////////////////////////////////////////////////////
 struct simple {
     cv::Mat IIR;
-    cv::Mat operator()(cv::Mat image) {
+    void operator()(cv::Mat image, cv::Mat out) {
         cv::addWeighted(IIR, 0.9, image, 0.1, 0.0, IIR);
-        return IIR;
+	out=IIR;
+        return;
     }
 };
 ///////////////////////////////////////////////////////////////////////////////
 //                                   bypass                                  //
 ///////////////////////////////////////////////////////////////////////////////
-cv::Mat bypass(cv::Mat image) {
-    return image;
+void bypass(cv::Mat image) {
+    return;
 }
 
 int main(int argc, char *argv[]) {
@@ -51,23 +53,24 @@ int main(int argc, char *argv[]) {
     config.width = 1024;
     config.height = 1024;
     config.offsetx = 512;
-    config.offsety = 512;
+    config.offsety = 0;
+    config.pixelFormat = "Mono8";
     config.grabberIndex = 0;
     config.cameraIndex = 0;
-    config.fps = 250;
-    config.image = cv::Mat::zeros(1024, 1024, CV_8UC1);
+    config.exposure = 1000.0;
+    config.fps = 300;
+    config.image = cv::Mat::zeros(config.width, config.height, CV_8UC1);
 
-    //IIR_alg iir;
-    //iir.IIR = cv::Mat::zeros(1024, 1024, CV_8UC1);
-    //iir.height = 1024;
-    //iir.width = 1024;
-    //config.process = iir;
+    IIR_alg iir;
+    iir.IIR = cv::Mat::zeros(config.width, config.height, CV_8UC1);
+    config.process = iir;
     //config.process = bypass;
-    simple s;
-    s.IIR = cv::Mat::zeros(1024, 1024, CV_8UC1);
-    config.process = s;
+    //simple s;
+    //s.IIR = cv::Mat::zeros(config.width, config.height, CV_8UC1);
+    //config.process = s;
 
     setup(config);
+    std::cout << "exposure: " << config.exposure << "\n";
 
     start(config);
 
@@ -78,8 +81,7 @@ int main(int argc, char *argv[]) {
     }
 
     stop(config);
-    std::cout << "Done!"
-              << "\n";
+    std::cout << "Done!\n";
 
     return 0;
 }

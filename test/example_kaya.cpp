@@ -3,7 +3,9 @@
 #include <functional>
 #include <opencv2/opencv.hpp>
 
-cv::Mat bypass(cv::Mat image){return image;}
+void bypass(cv::Mat image){
+    return;
+}
 
 int main(int argc, char *argv[]) {
     kaya_config config;

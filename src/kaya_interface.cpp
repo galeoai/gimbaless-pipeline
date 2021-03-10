@@ -4,6 +4,7 @@
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/opencv.hpp>
 #include <string>
+#include <chrono>
 
 void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
     if (0 == userContext) { return; }
@@ -29,9 +30,14 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
                ", total frames:%lld        ",
                streamHandle, buffIndex, config->totalFrames);
         cv::Mat image(config->height, config->width, CV_8UC1, buffData);  // TODO: make CV_8UC1 depend on the pixelformat
-        auto result = config->process(image);
+
+	auto t1 = std::chrono::high_resolution_clock::now();
+        config->process(image);
+	auto t2 = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+	std::cout << "It took " << ms_double.count() << "[ms]" << "\n";
         if (config->totalFrames % 10 == 0) {
-            result.copyTo(config->image);
+            image.copyTo(config->image);
         }
 
         copyingDataFlag = KYFALSE;
@@ -86,6 +92,12 @@ bool setup(kaya_config &config) {
                              config.fps);
 
     config.fps = KYFG_GetCameraValueFloat(config.camHandleArray[config.cameraIndex], "AcquisitionFrameRate");
+
+    KYFG_SetCameraValueFloat(config.camHandleArray[config.cameraIndex],
+			     "ExposureTime",
+			     config.exposure);
+
+    config.exposure = KYFG_GetCameraValueFloat(config.camHandleArray[config.cameraIndex], "ExposureTime");
 
     KYFG_SetCameraValueEnum_ByValueName(config.camHandleArray[config.cameraIndex],
                                         "PixelFormat",
