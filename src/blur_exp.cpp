@@ -48,6 +48,35 @@ struct simple {
 void bypass(cv::Mat image) {
     return;
 }
+///////////////////////////////////////////////////////////////////////////////
+//                                 callbacks                                 //
+///////////////////////////////////////////////////////////////////////////////
+void buttoncallbackReg(int state, void *userdata){
+    auto config = (kaya_config*) userdata;
+    if (state==1) {
+	IIR_alg iir;
+	iir.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
+	config->process = iir;
+    }
+}
+
+void buttoncallbackIIR(int state, void *userdata){
+    auto config = (kaya_config*) userdata;
+    if (state==1) {
+	simple s;
+	s.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
+	config->process = s;
+    }
+}
+
+void buttoncallbackNO(int state, void *userdata){
+    auto config = (kaya_config*) userdata;
+    if (state==1) {
+	config->process = bypass;
+    }
+}
+
+
 
 int main(int argc, char *argv[]) {
     kaya_config config;
@@ -62,23 +91,26 @@ int main(int argc, char *argv[]) {
     config.fps = 300;
     config.image = cv::Mat::zeros(config.width, config.height, CV_8UC1);
 
-    //IIR_alg iir;
-    //iir.IIR = cv::Mat::zeros(config.width, config.height, CV_8UC1);
-    //config.process = iir;
-    //config.process = bypass;
-    simple s;
-    s.IIR = cv::Mat::zeros(config.width, config.height, CV_8UC1);
-    config.process = s;
+    config.process = bypass;
 
     setup(config);
     std::cout << "exposure: " << config.exposure << "\n";
 
     start(config);
-
+    
     auto dis = config.image.clone();
+    //auto clahe = cv::createCLAHE(40 ,cv::Size(8,8));
+
+    namedWindow("image", cv::WINDOW_AUTOSIZE);
+    cv::createButton("No-alg",  buttoncallbackNO,(void*) &config,cv::QT_RADIOBOX,1);
+    cv::createButton("IIR-only",buttoncallbackIIR,(void*) &config,cv::QT_RADIOBOX,0);
+    cv::createButton("Reg-GPU", buttoncallbackReg,(void*) &config,cv::QT_RADIOBOX,0);
+
     while (true) {
 	cv::equalizeHist(config.image, dis);
-        cv::imshow("image", dis);
+	//clahe->apply(config.image, dis);
+	cv::imshow("image", dis);
+
         char c = (char)cv::waitKey(10);
         if (c == 27) break;
     }
