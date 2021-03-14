@@ -17,6 +17,7 @@ struct kaya_config {
     void *args;
     std::function<void(cv::Mat)> process = nullptr;
     cv::Mat image;
+    cv::Mat offset;
     long long totalFrames = 0;
     long long buffSize = 0;
     int grabberIndex = 0;

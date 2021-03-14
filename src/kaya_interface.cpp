@@ -26,16 +26,16 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
     if (KYFALSE == copyingDataFlag) {
         copyingDataFlag = KYTRUE;
 
-        printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
-               ", total frames:%lld        ",
-               streamHandle, buffIndex, config->totalFrames);
+        //printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
+        //       ", total frames:%lld        ",
+        //       streamHandle, buffIndex, config->totalFrames);
         cv::Mat image(config->height, config->width, CV_8UC1, buffData);  // TODO: make CV_8UC1 depend on the pixelformat
 
-	auto t1 = std::chrono::high_resolution_clock::now();
+	//auto t1 = std::chrono::high_resolution_clock::now();
         config->process(image);
-	auto t2 = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> ms_double = t2 - t1;
-	std::cout << "It took " << ms_double.count() << "[ms]" << "\n";
+	//auto t2 = std::chrono::high_resolution_clock::now();
+	//std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+	//std::cout << "It took " << ms_double.count() << "[ms]" << "\n";
         if (config->totalFrames % 10 == 0) {
             image.copyTo(config->image);
         }

@@ -22,61 +22,83 @@
 ///////////////////////////////////////////////////////////////////////////////
 struct IIR_alg {
     cv::Mat IIR;
+    cv::Mat offset;
     void operator()(cv::Mat image) {
         auto h_image_in = Zerocopy::gpu<uint8_t>(image);
         auto output = Zerocopy::gpu<uint8_t>(IIR);
-        process(h_image_in, output, output);
+	auto h_offset = Zerocopy::gpu<uint8_t>(offset);
+        process(h_image_in, output, h_offset, output);
         output.device_sync();
-	IIR.copyTo(image);
+        IIR.copyTo(image);
         return;
     }
-};
+} iir;
 ///////////////////////////////////////////////////////////////////////////////
 //                                   simple                                  //
 ///////////////////////////////////////////////////////////////////////////////
 struct simple {
     cv::Mat IIR;
+    cv::Mat offset;
     void operator()(cv::Mat image) {
-        cv::addWeighted(IIR, 0.7, image, 0.3, 0.0, IIR);
-	IIR.copyTo(image);
+        image = image - offset;
+        cv::addWeighted(IIR, 0.5, image, 0.5, 0.0, IIR);
+        IIR.copyTo(image);
         return;
     }
-};
+} s;
 ///////////////////////////////////////////////////////////////////////////////
 //                                   bypass                                  //
 ///////////////////////////////////////////////////////////////////////////////
 void bypass(cv::Mat image) {
     return;
-}
+};
 ///////////////////////////////////////////////////////////////////////////////
-//                                 callbacks                                 //
+//                                 alg callbacks                             //
 ///////////////////////////////////////////////////////////////////////////////
-void buttoncallbackReg(int state, void *userdata){
-    auto config = (kaya_config*) userdata;
-    if (state==1) {
-	IIR_alg iir;
-	iir.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
-	config->process = iir;
+void buttoncallbackReg(int state, void *userdata) {
+    usleep(2000);
+    auto config = (kaya_config *)userdata;
+    if (state == 1) {
+        //IIR_alg iir;
+        iir.offset = config->offset;
+        iir.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
+        config->process = iir;
     }
 }
 
-void buttoncallbackIIR(int state, void *userdata){
-    auto config = (kaya_config*) userdata;
-    if (state==1) {
-	simple s;
-	s.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
-	config->process = s;
+void buttoncallbackIIR(int state, void *userdata) {
+    usleep(2000);
+    auto config = (kaya_config *)userdata;
+    if (state == 1) {
+        //simple s;
+        s.offset = config->offset;
+        s.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
+        config->process = s;
     }
 }
 
-void buttoncallbackNO(int state, void *userdata){
-    auto config = (kaya_config*) userdata;
-    if (state==1) {
-	config->process = bypass;
+void buttoncallbackNO(int state, void *userdata) {
+    usleep(2000);
+    auto config = (kaya_config *)userdata;
+    if (state == 1) {
+        config->process = bypass;
     }
 }
 
-
+///////////////////////////////////////////////////////////////////////////////
+//                                NUC callback                               //
+///////////////////////////////////////////////////////////////////////////////
+void buttoncallbackNUC(int state, void *userdata) {
+    auto config = (kaya_config *)userdata;
+    config->process = bypass;
+    cv::Mat tmp = cv::Mat::zeros(config->width, config->height, CV_16UC1);
+    for (auto i = 0; i < 50; ++i) {
+        usleep(2000);
+        tmp += config->image;
+    }
+    tmp /= 50;
+    tmp.convertTo(config->offset, CV_8UC1);
+}
 
 int main(int argc, char *argv[]) {
     kaya_config config;
@@ -88,31 +110,38 @@ int main(int argc, char *argv[]) {
     config.grabberIndex = 0;
     config.cameraIndex = 0;
     config.exposure = 1000.0;
-    config.fps = 300;
+    config.fps = 200;
     config.image = cv::Mat::zeros(config.width, config.height, CV_8UC1);
-
+    config.offset = cv::Mat::zeros(config.width, config.height, CV_8UC1);
     config.process = bypass;
 
     setup(config);
-    std::cout << "exposure: " << config.exposure << "\n";
 
     start(config);
-    
+
     auto dis = config.image.clone();
-    //auto clahe = cv::createCLAHE(40 ,cv::Size(8,8));
+    auto clahe = cv::createCLAHE(2.0, cv::Size(32, 32));
 
     namedWindow("image", cv::WINDOW_AUTOSIZE);
-    cv::createButton("No-alg",  buttoncallbackNO,(void*) &config,cv::QT_RADIOBOX,1);
-    cv::createButton("IIR-only",buttoncallbackIIR,(void*) &config,cv::QT_RADIOBOX,0);
-    cv::createButton("Reg-GPU", buttoncallbackReg,(void*) &config,cv::QT_RADIOBOX,0);
+    // one point nuc
+    cv::createButton("One point NUC", buttoncallbackNUC, (void *)&config, cv::QT_PUSH_BUTTON, 0);
+    // alg button
+    cv::createButton("No-alg", buttoncallbackNO, (void *)&config, cv::QT_RADIOBOX, 1);
+    cv::createButton("IIR-only", buttoncallbackIIR, (void *)&config, cv::QT_RADIOBOX, 0);
+    cv::createButton("Reg-GPU", buttoncallbackReg, (void *)&config, cv::QT_RADIOBOX, 0);
 
     while (true) {
-	cv::equalizeHist(config.image, dis);
-	//clahe->apply(config.image, dis);
-	cv::imshow("image", dis);
+	try {
+	    cv::equalizeHist(config.image, dis);
+	    //clahe->apply(config.image, dis);
+	    cv::imshow("image", dis);
 
-        char c = (char)cv::waitKey(10);
-        if (c == 27) break;
+	    char c = (char)cv::waitKey(20);
+	    if (c == 27) break;
+	} catch(...){
+	    std::cout << "Fatal Error!" << "\n";
+	    stop(config);
+	}
     }
 
     stop(config);

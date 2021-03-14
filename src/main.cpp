@@ -38,6 +38,8 @@ int main(int argc, char *argv[]) {
     auto tmp_image = cv::Mat(images[0].rows, images[0].cols, images[0].type());
     auto noise = cv::Mat(images[0].rows, images[0].cols, images[0].type());
     auto h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
+    cv::Mat offset = cv::Mat::zeros(images[0].rows, images[0].cols, images[0].type());
+    auto h_offset = Zerocopy::gpu<uint8_t>(offset);
     auto output = Zerocopy::gpu<uint8_t>(image_out);
     //out.write(images[0]);
     while (true) {
@@ -49,7 +51,7 @@ int main(int argc, char *argv[]) {
 
         //h_image_in = Zerocopy::gpu<uint8_t>(images[i]);
         h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
-        process(h_image_in, output, output);
+        process(h_image_in, output, h_offset, output);
         output.device_sync();
         out.write(image_out);
 

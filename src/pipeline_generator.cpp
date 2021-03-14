@@ -10,23 +10,26 @@ class Gimbaless : public Halide::Generator<Gimbaless> {
 public:
     Input<Buffer<uint8_t>> image1{"image1", 2};
     Input<Buffer<uint8_t>> image2{"image2", 2};
+    Input<Buffer<uint8_t>> offset{"offset", 2};
 
     Output<Buffer<uint8_t>> output{"output", 2};
 
     void generate() {
         Var x("x"), y("y"), dx("dx"), dy("dy");
-        Func diff("diff"), shift("shift");
+        Func diff("diff"), shift("shift"), nuc("nuc");
         Func img1 = BoundaryConditions::repeat_edge(image1);
         Func img2 = BoundaryConditions::repeat_edge(image2);
-
+	Func off = BoundaryConditions::repeat_edge(offset);
+	nuc(x,y) = cast<uint8_t>(max(cast<int16_t>(img1(x,y))-
+				     cast<int16_t>(off(x,y)),0));
         RDom patch(0, PATCH_SIZE, 0, PATCH_SIZE), search(-RADIUS, 2 * RADIUS + 1, -RADIUS, 2 * RADIUS + 1);
-        diff(x, y, dx, dy) = sum(abs(i32(img1(x + patch.x, y + patch.y)) -
+        diff(x, y, dx, dy) = sum(abs(i32(nuc(x + patch.x, y + patch.y)) -
                                      i32(img2(x + dx + patch.x, y + dy + patch.y))));
 
         shift(x, y) = argmin(search, diff(PATCH_SIZE * x, PATCH_SIZE * y, search.x, search.y));
 
-        output(x, y) = cast<uint8_t>(0.3f * img1(x, y) +
-                                     0.7f * img2(x + shift(x / PATCH_SIZE, y / PATCH_SIZE)[0],
+        output(x, y) = cast<uint8_t>(0.5f * nuc(x, y) +
+                                     0.5f * img2(x + shift(x / PATCH_SIZE, y / PATCH_SIZE)[0],
                                                  y + shift(x / PATCH_SIZE, y / PATCH_SIZE)[1]));
 
         // STMT output

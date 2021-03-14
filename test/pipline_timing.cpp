@@ -16,10 +16,12 @@ int main(int argc, char *argv[]) {
     }
     auto h_image1 = Zerocopy::gpu<uint8_t>(image1);
     auto h_image2 = Zerocopy::gpu<uint8_t>(image2);
+    cv::Mat offset = cv::Mat::zeros(image1.rows, image1.cols, image1.type());
+    auto h_offset = Zerocopy::gpu<uint8_t>(offset);
     auto output = Zerocopy::gpu<uint8_t>(image_out);
     // benchmark
     double auto_schedule_off = Halide::Tools::benchmark(5, 10, [&]() {
-        process(h_image1, h_image2, output);
+        process(h_image1, h_image2,h_offset, output);
         output.device_sync();
     });
     printf("Manual schedule: %gms\n", auto_schedule_off * 1e3);
