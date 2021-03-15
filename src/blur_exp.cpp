@@ -56,23 +56,21 @@ void bypass(cv::Mat image) {
 //                                 alg callbacks                             //
 ///////////////////////////////////////////////////////////////////////////////
 void buttoncallbackReg(int state, void *userdata) {
-    usleep(2000);
     auto config = (kaya_config *)userdata;
     if (state == 1) {
-        //IIR_alg iir;
-        iir.offset = config->offset;
+        iir.offset = config->offset.clone();
         iir.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
+	usleep(10000);
         config->process = iir;
     }
 }
 
 void buttoncallbackIIR(int state, void *userdata) {
-    usleep(2000);
     auto config = (kaya_config *)userdata;
     if (state == 1) {
-        //simple s;
-        s.offset = config->offset;
+        s.offset = config->offset.clone();
         s.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
+	usleep(10000);
         config->process = s;
     }
 }
@@ -110,7 +108,7 @@ int main(int argc, char *argv[]) {
     config.grabberIndex = 0;
     config.cameraIndex = 0;
     config.exposure = 1000.0;
-    config.fps = 200;
+    config.fps = 250;
     config.image = cv::Mat::zeros(config.width, config.height, CV_8UC1);
     config.offset = cv::Mat::zeros(config.width, config.height, CV_8UC1);
     config.process = bypass;
@@ -136,7 +134,7 @@ int main(int argc, char *argv[]) {
 	    //clahe->apply(config.image, dis);
 	    cv::imshow("image", dis);
 
-	    char c = (char)cv::waitKey(20);
+	    char c = (char)cv::waitKey(30);
 	    if (c == 27) break;
 	} catch(...){
 	    std::cout << "Fatal Error!" << "\n";
