@@ -41,7 +41,7 @@ struct simple {
     cv::Mat offset;
     void operator()(cv::Mat image) {
         image = image - offset;
-        cv::addWeighted(IIR, 0.5, image, 0.5, 0.0, IIR);
+        cv::addWeighted(IIR, 0.8, image, 0.2, 0.0, IIR);
         IIR.copyTo(image);
         return;
     }
