@@ -32,7 +32,12 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
         cv::Mat image(config->height, config->width, CV_8UC1, buffData);  // TODO: make CV_8UC1 depend on the pixelformat
 
 	//auto t1 = std::chrono::high_resolution_clock::now();
-        config->process(image);
+	try{
+	    config->process(image);
+	} catch(...){
+	    std::cout << "Fatal Error!" << "\n";
+	    stop(*config);
+	}
 	//auto t2 = std::chrono::high_resolution_clock::now();
 	//std::chrono::duration<double, std::milli> ms_double = t2 - t1;
 	//std::cout << "It took " << ms_double.count() << "[ms]" << "\n";

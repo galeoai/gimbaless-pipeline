@@ -28,8 +28,8 @@ public:
 
         shift(x, y) = argmin(search, diff(PATCH_SIZE * x, PATCH_SIZE * y, search.x, search.y));
 
-        output(x, y) = cast<uint8_t>(0.9f * nuc(x, y) +
-                                     0.1f * img2(x + shift(x / PATCH_SIZE, y / PATCH_SIZE)[0],
+        output(x, y) = cast<uint8_t>(0.3f * nuc(x, y) +
+                                     0.7f * img2(x + shift(x / PATCH_SIZE, y / PATCH_SIZE)[0],
                                                  y + shift(x / PATCH_SIZE, y / PATCH_SIZE)[1]));
 
         // STMT output

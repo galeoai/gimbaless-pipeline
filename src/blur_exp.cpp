@@ -29,7 +29,10 @@ struct IIR_alg {
 	auto h_offset = Zerocopy::gpu<uint8_t>(offset);
         process(h_image_in, output, h_offset, output);
         output.device_sync();
-        IIR.copyTo(image);
+	IIR.copyTo(image);
+	Zerocopy::release<uint8_t>(image);
+	Zerocopy::release<uint8_t>(IIR);
+	Zerocopy::release<uint8_t>(offset);
         return;
     }
 } iir;
@@ -108,7 +111,7 @@ int main(int argc, char *argv[]) {
     config.grabberIndex = 0;
     config.cameraIndex = 0;
     config.exposure = 1000.0;
-    config.fps = 250;
+    config.fps = 200;
     config.image = cv::Mat::zeros(config.width, config.height, CV_8UC1);
     config.offset = cv::Mat::zeros(config.width, config.height, CV_8UC1);
     config.process = bypass;
@@ -118,7 +121,7 @@ int main(int argc, char *argv[]) {
     start(config);
 
     auto dis = config.image.clone();
-    auto clahe = cv::createCLAHE(2.0, cv::Size(32, 32));
+    auto clahe = cv::createCLAHE(5.0, cv::Size(128, 128));
 
     namedWindow("image", cv::WINDOW_AUTOSIZE);
     // one point nuc
@@ -136,9 +139,10 @@ int main(int argc, char *argv[]) {
 
 	    char c = (char)cv::waitKey(30);
 	    if (c == 27) break;
-	} catch(...){
-	    std::cout << "Fatal Error!" << "\n";
+	} catch(cv::Exception& e){
 	    stop(config);
+	    const char* err_msg = e.what();
+	    std::cout << "exception caught: " << err_msg << std::endl;
 	}
     }
 

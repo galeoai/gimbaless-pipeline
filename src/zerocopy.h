@@ -34,6 +34,11 @@ inline Halide::Runtime::Buffer<T> gpu(cv::Mat image) {
     h_image.set_host_dirty();
     return h_image;
 };
+template<typename T>
+inline void release(cv::Mat image) {
+    auto im1 = image.ptr<T>(0);
+    cudaHostUnregister(im1);
+};
 
 }  // namespace Zerocopy
 
