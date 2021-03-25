@@ -36,14 +36,16 @@ void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
 	    config->process(image);
 	} catch(...){
 	    std::cout << "Fatal Error!" << "\n";
-	    stop(*config);
+	    copyingDataFlag = KYFALSE;
+	    return;
+	    //stop(*config);
 	}
 	//auto t2 = std::chrono::high_resolution_clock::now();
 	//std::chrono::duration<double, std::milli> ms_double = t2 - t1;
 	//std::cout << "It took " << ms_double.count() << "[ms]" << "\n";
         if (config->totalFrames % 10 == 0) {
-            image.copyTo(config->image);
-        }
+	    image.copyTo(config->image);
+	}
 
         copyingDataFlag = KYFALSE;
     }
