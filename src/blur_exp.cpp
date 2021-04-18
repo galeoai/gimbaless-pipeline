@@ -16,7 +16,7 @@
 
 // halide pipeline
 #include "process.h"
-#include "zerocopy.h"
+#include "mem_helper.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                  IIR alg                                  //
@@ -25,9 +25,9 @@ struct IIR_alg {
     cv::Mat IIR;
     cv::Mat offset;
     void operator()(cv::Mat image) {
-	auto output = Zerocopy::to_halide<uint8_t>(IIR);
-	auto h_offset = Zerocopy::to_halide<uint8_t>(offset);
-	auto h_image = Zerocopy::to_halide<uint8_t>(image);
+	auto output = mem::to_halide<uint8_t>(IIR);
+	auto h_offset = mem::to_halide<uint8_t>(offset);
+	auto h_image = mem::to_halide<uint8_t>(image);
         process(h_image, output, h_offset, output);
 	h_image.device_sync();
 	IIR.copyTo(image);
@@ -59,8 +59,8 @@ void bypass(cv::Mat image) {
 void buttoncallbackReg(int state, void *userdata) {
     auto config = (kaya_config *)userdata;
     if (state == 1) {
-	iir.offset = Zerocopy::xavier<uint8_t>(config->offset);
-	iir.IIR = Zerocopy::xavier<uint8_t>(config->image);
+	iir.offset = mem::gpu<uint8_t>(config->offset);
+	iir.IIR = mem::gpu<uint8_t>(config->image);
 	usleep(10000);
         config->process = iir;
     }

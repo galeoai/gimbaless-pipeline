@@ -1,3 +1,4 @@
+#include <bits/stdint-uintn.h>
 #include <iostream>
 #include <opencv2/core/utility.hpp>
 #include <opencv2/highgui.hpp>
@@ -10,7 +11,7 @@
 
 // halide pipeline
 #include "process.h"
-#include "zerocopy.h"
+#include "mem_helper.h"
 
 
 int main(int argc, char *argv[]) {
@@ -33,14 +34,15 @@ int main(int argc, char *argv[]) {
              30,
              image_out.size(),
              false);
-
+    auto gpu = [](cv::Mat img) {return mem::to_halide<uint8_t>(mem::gpu<uint8_t>(img));};
+    
     int i = 0;
     auto tmp_image = cv::Mat(images[0].rows, images[0].cols, images[0].type());
     auto noise = cv::Mat(images[0].rows, images[0].cols, images[0].type());
-    auto h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
+    auto h_image_in = gpu(tmp_image);
     cv::Mat offset = cv::Mat::zeros(images[0].rows, images[0].cols, images[0].type());
-    auto h_offset = Zerocopy::gpu<uint8_t>(offset);
-    auto output = Zerocopy::gpu<uint8_t>(image_out);
+    auto h_offset = gpu(offset);
+    auto output = gpu(image_out);
     //out.write(images[0]);
     while (true) {
         cv::randu(noise, -30, 30);
@@ -50,7 +52,7 @@ int main(int argc, char *argv[]) {
         i++;
 
         //h_image_in = Zerocopy::gpu<uint8_t>(images[i]);
-        h_image_in = Zerocopy::gpu<uint8_t>(tmp_image);
+        h_image_in = gpu(tmp_image);
         process(h_image_in, output, h_offset, output);
         output.device_sync();
         out.write(image_out);
