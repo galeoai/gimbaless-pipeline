@@ -1,3 +1,4 @@
+#include <bits/stdint-uintn.h>
 #include <cstdlib>
 #include <iostream>
 #include <opencv2/core.hpp>
@@ -24,15 +25,12 @@ struct IIR_alg {
     cv::Mat IIR;
     cv::Mat offset;
     void operator()(cv::Mat image) {
-        auto h_image_in = Zerocopy::gpu<uint8_t>(image);
-        auto output = Zerocopy::gpu<uint8_t>(IIR);
-	auto h_offset = Zerocopy::gpu<uint8_t>(offset);
-        process(h_image_in, output, h_offset, output);
-        output.device_sync();
+	auto output = Zerocopy::to_halide<uint8_t>(IIR);
+	auto h_offset = Zerocopy::to_halide<uint8_t>(offset);
+	auto h_image = Zerocopy::to_halide<uint8_t>(image);
+        process(h_image, output, h_offset, output);
+	h_image.device_sync();
 	IIR.copyTo(image);
-	Zerocopy::release<uint8_t>(image);
-	Zerocopy::release<uint8_t>(IIR);
-	Zerocopy::release<uint8_t>(offset);
         return;
     }
 } iir;
@@ -61,8 +59,8 @@ void bypass(cv::Mat image) {
 void buttoncallbackReg(int state, void *userdata) {
     auto config = (kaya_config *)userdata;
     if (state == 1) {
-        iir.offset = config->offset.clone();
-        iir.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
+	iir.offset = Zerocopy::xavier<uint8_t>(config->offset);
+	iir.IIR = Zerocopy::xavier<uint8_t>(config->image);
 	usleep(10000);
         config->process = iir;
     }
@@ -72,7 +70,7 @@ void buttoncallbackIIR(int state, void *userdata) {
     auto config = (kaya_config *)userdata;
     if (state == 1) {
         s.offset = config->offset.clone();
-        s.IIR = cv::Mat::zeros(config->width, config->height, CV_8UC1);
+        s.IIR = config->image.clone();
 	usleep(10000);
         config->process = s;
     }
@@ -111,7 +109,7 @@ int main(int argc, char *argv[]) {
     config.grabberIndex = 0;
     config.cameraIndex = 0;
     config.exposure = 1000.0;
-    config.fps = 200;
+    config.fps = 250;
     config.image = cv::Mat::zeros(config.width, config.height, CV_8UC1);
     config.offset = cv::Mat::zeros(config.width, config.height, CV_8UC1);
     config.process = bypass;

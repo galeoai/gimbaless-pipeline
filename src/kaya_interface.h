@@ -23,7 +23,8 @@ struct kaya_config {
     int grabberIndex = 0;
     int cameraIndex = 0;
     FGHANDLE handle;
-    STREAM_HANDLE streamHandle = 0;
+    STREAM_BUFFER_HANDLE streamBufferHandle[16] = {0};
+    STREAM_HANDLE cameraStreamHandle = INVALID_STREAMHANDLE;
     CAMHANDLE camHandleArray[KY_MAX_CAMERAS];
 };
 

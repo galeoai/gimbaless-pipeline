@@ -45,12 +45,12 @@ if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
   # interface test 
   add_executable(test_kaya test/kaya.cpp src/kaya_interface.cpp)
   target_include_directories(test_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
-  target_link_libraries(test_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS})
+  target_link_libraries(test_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} ${CUDA_LIBRARIES})
   add_test(KAYA test_kaya)
   # interface example
   add_executable(example_kaya test/example_kaya.cpp src/kaya_interface.cpp)
   target_include_directories(example_kaya PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
-  target_link_libraries(example_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS})
+  target_link_libraries(example_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 
   # blur experiment
   add_executable(blur_exp src/blur_exp.cpp src/kaya_interface.cpp)

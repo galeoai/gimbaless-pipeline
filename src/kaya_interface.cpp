@@ -1,54 +1,88 @@
 #include "kaya_interface.h"
 #include "KYFGLib_defines.h"
+#include <chrono>
+#include <cstdint>
 #include <iostream>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/opencv.hpp>
 #include <string>
-#include <chrono>
+#include <cuda_runtime.h>
 
-void Stream_callback_func(void *userContext, STREAM_HANDLE streamHandle) {
+void Stream_callback_func(STREAM_BUFFER_HANDLE streamBufferHandle,
+			  void *userContext) {
     if (0 == userContext) { return; }
     auto config = (kaya_config *)userContext;
 
-    static KYBOOL copyingDataFlag = KYFALSE;
-    void *buffData;
-    if (0 == streamHandle)  // callback with indicator for acquisition stop
+    unsigned char* pFrameMemory = 0;
+    int64_t totalFrames = -1;
+    uint32_t frameId = 0;
+    size_t bufferSize = 0;
+    void* pUserContext;
+    uint64_t timeStamp;
+    double instantFps;
+
+    if (!streamBufferHandle)
     {
-        copyingDataFlag = KYFALSE;
+        // this callback indicates that acquisition has stopped
         return;
     }
-    config->totalFrames = KYFG_GetGrabberValueInt(streamHandle, "RXFrameCounter");
-    auto buffSize = KYFG_StreamGetSize(streamHandle);  // get buffer size
-    auto buffIndex = KYFG_StreamGetFrameIndex(streamHandle);
-    buffData =
-        KYFG_StreamGetPtr(streamHandle, buffIndex);  // get pointer of buffer data
+    // get data pointer (pFramememory)
+    KYFG_BufferGetInfo(streamBufferHandle, 
+                        KY_STREAM_BUFFER_INFO_BASE, 
+                        &pFrameMemory, 
+                        NULL, 
+                        NULL);
+    //Get Data
+    KYFG_BufferGetInfo(streamBufferHandle, 
+                        KY_STREAM_BUFFER_INFO_ID, 
+                        &frameId, 
+                        NULL, 
+                        NULL);
+
+    KYFG_BufferGetInfo(streamBufferHandle, 
+                        KY_STREAM_BUFFER_INFO_SIZE, 
+                        &bufferSize, 
+                        NULL, 
+                        NULL);
+
+    KYFG_BufferGetInfo(streamBufferHandle, 
+                        KY_STREAM_BUFFER_INFO_USER_PTR, 
+                        &pUserContext, 
+                        NULL, 
+                        NULL);
+
+    KYFG_BufferGetInfo(streamBufferHandle, 
+                        KY_STREAM_BUFFER_INFO_TIMESTAMP, 
+                        &timeStamp, 
+                        NULL, 
+                        NULL);
+
+    KYFG_BufferGetInfo(streamBufferHandle, 
+                        KY_STREAM_BUFFER_INFO_INSTANTFPS, 
+                        &instantFps, 
+                        NULL, 
+                        NULL);
+
+    //printf(//"\n" // Uncomment to print on new line each time
+    //        "\rGood callback stream's buffer handle:%" PRISTREAM_BUFFER_HANDLE ", ID:%d", streamBufferHandle, frameId);
+
     if (nullptr == config->process) { return; }
-    if (KYFALSE == copyingDataFlag) {
-        copyingDataFlag = KYTRUE;
 
-        //printf("\rGood callback buffer handle:%X, current index:%" PRISTREAM_HANDLE
-        //       ", total frames:%lld        ",
-        //       streamHandle, buffIndex, config->totalFrames);
-        cv::Mat image(config->height, config->width, CV_8UC1, buffData);  // TODO: make CV_8UC1 depend on the pixelformat
-
-	//auto t1 = std::chrono::high_resolution_clock::now();
-	try{
-	    config->process(image);
-	} catch(...){
-	    std::cout << "Fatal Error!" << "\n";
-	    copyingDataFlag = KYFALSE;
-	    return;
-	    //stop(*config);
-	}
-	//auto t2 = std::chrono::high_resolution_clock::now();
-	//std::chrono::duration<double, std::milli> ms_double = t2 - t1;
-	//std::cout << "It took " << ms_double.count() << "[ms]" << "\n";
-        if (config->totalFrames % 10 == 0) {
-	    image.copyTo(config->image);
-	}
-
-        copyingDataFlag = KYFALSE;
+    cv::Mat image(config->height, config->width, CV_8UC1, pFrameMemory);  // TODO: make CV_8UC1 depend on the pixelformat
+    
+    try {
+	config->process(image);
+    } catch (...) {
+	std::cout << "Fatal Error!"
+		  << "\n";
+	return;
+	stop(*config);
     }
+    if (config->totalFrames % 10 == 0) {
+	image.copyTo(config->image);
+    }
+    
+    KYFG_BufferToQueue(streamBufferHandle, KY_ACQ_QUEUE_INPUT);
 }
 
 bool setup(kaya_config &config) {
@@ -101,29 +135,48 @@ bool setup(kaya_config &config) {
     config.fps = KYFG_GetCameraValueFloat(config.camHandleArray[config.cameraIndex], "AcquisitionFrameRate");
 
     KYFG_SetCameraValueFloat(config.camHandleArray[config.cameraIndex],
-			     "ExposureTime",
-			     config.exposure);
+                             "ExposureTime",
+                             config.exposure);
 
     config.exposure = KYFG_GetCameraValueFloat(config.camHandleArray[config.cameraIndex], "ExposureTime");
 
     KYFG_SetCameraValueEnum_ByValueName(config.camHandleArray[config.cameraIndex],
                                         "PixelFormat",
                                         config.pixelFormat.c_str());
+    
+    KYFG_StreamCreate(config.camHandleArray[config.cameraIndex], &config.cameraStreamHandle, 0);
+    KYFG_StreamBufferCallbackRegister(config.cameraStreamHandle, Stream_callback_func, (void *)&config);
 
-    KYFG_CameraCallbackRegister(config.camHandleArray[config.cameraIndex],
-                                Stream_callback_func,
-                                (void *)&config);
     return true;
 }
 
 bool start(kaya_config &config) {
-    if (FGSTATUS_OK !=
-        KYFG_StreamCreateAndAlloc(config.camHandleArray[config.cameraIndex],
-                                  &config.streamHandle, 32, 0)) {
-        printf("Failed to allocate buffer.\n");
-        return false;
+    for (auto iFrame = 0; iFrame < 16; iFrame++) {
+	size_t frameDataSize;
+	KYFG_StreamGetInfo(config.cameraStreamHandle, 
+			   KY_STREAM_INFO_PAYLOAD_SIZE, 
+			   &frameDataSize, 
+			   NULL, NULL);
+	void *pBuffer;
+	cudaHostAlloc(&pBuffer, frameDataSize, 
+		      cudaHostAllocDefault);
+	
+	auto ret = KYFG_BufferAnnounce(config.cameraStreamHandle,
+				       pBuffer,
+				       frameDataSize,
+				       NULL,
+				       &config.streamBufferHandle[iFrame]);
+
+        if (FGSTATUS_OK != ret) {
+            printf("Failed to allocate buffer.\n");
+            return false;
+        }
     }
-    KYFG_CameraStart(config.camHandleArray[config.cameraIndex], config.streamHandle, 0);
+    KYFG_BufferQueueAll(config.cameraStreamHandle,
+			KY_ACQ_QUEUE_UNQUEUED,
+			KY_ACQ_QUEUE_INPUT);  
+    KYFG_CameraStart(config.camHandleArray[config.cameraIndex], 
+		     config.cameraStreamHandle, 0);
 
     return true;
 }
