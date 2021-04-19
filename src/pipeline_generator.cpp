@@ -11,6 +11,7 @@ public:
     Input<Buffer<uint8_t>> image1{"image1", 2};
     Input<Buffer<uint8_t>> image2{"image2", 2};
     Input<Buffer<uint8_t>> offset{"offset", 2};
+    Input<Buffer<float_t>> gain{"gain", 2};
 
     Output<Buffer<uint8_t>> output{"output", 2};
 
@@ -20,8 +21,8 @@ public:
         Func img1 = BoundaryConditions::repeat_edge(image1);
         Func img2 = BoundaryConditions::repeat_edge(image2);
 	Func off = BoundaryConditions::repeat_edge(offset);
-	nuc(x,y) = cast<uint8_t>(max(cast<int16_t>(img1(x,y))-
-				     cast<int16_t>(off(x,y)),0));
+	nuc(x,y) = cast<uint8_t>(gain(x,y)*max(cast<int16_t>(img1(x,y))-
+					       cast<int16_t>(off(x,y)),0));
         RDom patch(0, PATCH_SIZE, 0, PATCH_SIZE), search(-RADIUS, 2 * RADIUS + 1, -RADIUS, 2 * RADIUS + 1);
         diff(x, y, dx, dy) = sum(abs(i32(nuc(x + patch.x, y + patch.y)) -
                                      i32(img2(x + dx + patch.x, y + dy + patch.y))));

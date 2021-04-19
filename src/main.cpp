@@ -52,10 +52,10 @@ int main(int argc, char *argv[]) {
         i++;
 
         //h_image_in = Zerocopy::gpu<uint8_t>(images[i]);
-        h_image_in = gpu(tmp_image);
-        process(h_image_in, output, h_offset, output);
-        output.device_sync();
-        out.write(image_out);
+        //h_image_in = gpu(tmp_image);
+        //process(h_image_in, output, h_offset, output);
+        //output.device_sync();
+        //out.write(image_out);
 
 
         //out << tmp_image;

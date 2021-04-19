@@ -35,8 +35,10 @@ template<typename T>
 inline cv::Mat gpu(cv::Mat image) {
     auto image_ptr = image.ptr<T>(0);
     void *image_gpu;
-    gpuErrchk(cudaHostAlloc(&image_gpu,image.total() * image.elemSize(),
+    size_t size=image.total() * image.elemSize();
+    gpuErrchk(cudaHostAlloc(&image_gpu,size,
 			    cudaHostAllocDefault));
+    cudaMemcpy(image_gpu,(void *)image_ptr,size,cudaMemcpyHostToDevice);
     return cv::Mat(image.rows,image.cols,CV_8UC1,image_gpu);
 };
 
