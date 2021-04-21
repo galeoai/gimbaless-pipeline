@@ -21,7 +21,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                                  IIR alg                                  //
 ///////////////////////////////////////////////////////////////////////////////
-struct IIR_alg {
+struct IIR_reg_gpu {
     cv::Mat IIR;
     cv::Mat offset;
     cv::Mat gain;
@@ -35,23 +35,35 @@ struct IIR_alg {
 	IIR.copyTo(image);
         return;
     }
-} iir;
+} iir_gpu;
 ///////////////////////////////////////////////////////////////////////////////
-//                                   simple                                  //
+//                                   NUC only                                //
 ///////////////////////////////////////////////////////////////////////////////
-struct simple {
+struct NUC_only {
+    cv::Mat offset;
+    cv::Mat gain;
+    void operator()(cv::Mat image) {
+        image-=offset;
+	cv::multiply(image,gain,image,1.0,CV_8UC1);
+        return;
+    }
+} nuc_only;
+///////////////////////////////////////////////////////////////////////////////
+//                                   IIR                                     //
+///////////////////////////////////////////////////////////////////////////////
+struct IIR {
     cv::Mat IIR;
     cv::Mat offset;
     cv::Mat gain;
     void operator()(cv::Mat image) {
         image-=offset;
 	cv::multiply(image,gain,image,1.0,CV_8UC1);
-	//image*=gain; 
         cv::addWeighted(IIR, 0.8, image, 0.2, 0.0, IIR);
         IIR.copyTo(image);
         return;
     }
-} s;
+} iir;
+
 ///////////////////////////////////////////////////////////////////////////////
 //                                   bypass                                  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -64,24 +76,35 @@ void bypass(cv::Mat image) {
 void buttoncallbackReg(int state, void *userdata) {
     auto config = (kaya_config *)userdata;
     if (state == 1) {
-	iir.offset = mem::gpu<uint8_t>(config->offset);
-	iir.gain = mem::gpu<float_t>(config->gain);
-	iir.IIR = mem::gpu<uint8_t>(config->image);
-	usleep(10000);
-        config->process = iir;
+        iir_gpu.offset = mem::gpu<uint8_t>(config->offset);
+        iir_gpu.gain = mem::gpu<float_t>(config->gain);
+        iir_gpu.IIR = mem::gpu<uint8_t>(config->image);
+        usleep(10000);
+        config->process = iir_gpu;
     }
 }
 
 void buttoncallbackIIR(int state, void *userdata) {
     auto config = (kaya_config *)userdata;
     if (state == 1) {
-        s.offset = config->offset.clone();
-	s.gain = config->gain.clone();
-        s.IIR = config->image.clone();
-	usleep(10000);
-        config->process = s;
+        iir.offset = config->offset.clone();
+        iir.gain = config->gain.clone();
+        iir.IIR = config->image.clone();
+        usleep(10000);
+        config->process = iir;
     }
 }
+
+void buttoncallbackNUC(int state, void *userdata) {
+    auto config = (kaya_config *)userdata;
+    if (state == 1) {
+        nuc_only.offset = config->offset.clone();
+        nuc_only.gain = config->gain.clone();
+        usleep(10000);
+        config->process = nuc_only;
+    }
+}
+
 
 void buttoncallbackNO(int state, void *userdata) {
     usleep(2000);
@@ -150,7 +173,8 @@ int main(int argc, char *argv[]) {
     cv::createButton("NUC[Dark]", buttoncallbackDark, (void *)&config, cv::QT_PUSH_BUTTON, 0);
     cv::createButton("NUC[Flat]", buttoncallbackFlat, (void *)&config, cv::QT_PUSH_BUTTON, 0);
     // alg button
-    cv::createButton("No-alg", buttoncallbackNO, (void *)&config, cv::QT_RADIOBOX, 1);
+    cv::createButton("raw", buttoncallbackNO, (void *)&config, cv::QT_RADIOBOX, 1);
+    cv::createButton("NUC-only", buttoncallbackNUC, (void *)&config, cv::QT_RADIOBOX, 0);
     cv::createButton("IIR-only", buttoncallbackIIR, (void *)&config, cv::QT_RADIOBOX, 0);
     cv::createButton("Reg-GPU", buttoncallbackReg, (void *)&config, cv::QT_RADIOBOX, 0);
 
