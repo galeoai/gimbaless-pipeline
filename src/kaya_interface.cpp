@@ -132,6 +132,10 @@ bool setup(kaya_config &config) {
                              "AcquisitionFrameRate",
                              config.fps);
 
+    KYFG_SetCameraValueFloat(config.camHandleArray[config.cameraIndex],
+                             "AnalogGainLevel",
+                             5.0);
+
     config.fps = KYFG_GetCameraValueFloat(config.camHandleArray[config.cameraIndex], "AcquisitionFrameRate");
 
     KYFG_SetCameraValueFloat(config.camHandleArray[config.cameraIndex],
