@@ -53,7 +53,7 @@ if (DEFINED ENV{KAYA_VISION_POINT_LIB_PATH} AND
   target_link_libraries(example_kaya $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 
   # blur experiment
-  add_executable(blur_exp src/blur_exp.cpp src/kaya_interface.cpp)
+  add_executable(blur_exp src/blur_exp.cpp src/kaya_interface.cpp src/SimpleVideoStabilizer.cpp)
   target_include_directories(blur_exp PRIVATE $ENV{KAYA_VISION_POINT_INCLUDE_PATH})
   target_link_libraries(blur_exp $ENV{KAYA_VISION_POINT_LIB_PATH}/libKYFGLib.so ${OpenCV_LIBS} ${CUDA_LIBRARIES} process)
   

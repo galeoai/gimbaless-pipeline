@@ -18,6 +18,9 @@
 #include "process.h"
 #include "mem_helper.h"
 
+// image stabilization
+#include "SimpleVideoStabilizer.h"
+
 ///////////////////////////////////////////////////////////////////////////////
 //                                  IIR alg                                  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -143,6 +146,17 @@ void buttoncallbackFlat(int state, void *userdata) {
     cv::subtract(tmp,config->offset,diff,cv::noArray(), CV_32F);
     config->gain = nominator[0]/diff;
 }
+///////////////////////////////////////////////////////////////////////////////
+//                          stabilization callback                           //
+///////////////////////////////////////////////////////////////////////////////
+void buttoncallbackStab(int state, void *userdata) {
+    auto stab = (bool *)userdata;
+    if (*stab == false) {
+        *stab = true; //flip state
+    } else {
+	*stab = false;
+    }
+}
 
 
 int main(int argc, char *argv[]) {
@@ -166,7 +180,7 @@ int main(int argc, char *argv[]) {
     start(config);
 
     auto dis = config.image.clone();
-    auto clahe = cv::createCLAHE(10.0, cv::Size(32, 32));
+    auto clahe = cv::createCLAHE(2.0, cv::Size(16, 16));
 
     namedWindow("image", cv::WINDOW_AUTOSIZE);
     // one point nuc
@@ -177,11 +191,23 @@ int main(int argc, char *argv[]) {
     //cv::createButton("NUC-only", buttoncallbackNUC, (void *)&config, cv::QT_RADIOBOX, 0);
     cv::createButton("IIR-only", buttoncallbackIIR, (void *)&config, cv::QT_RADIOBOX, 0);
     cv::createButton("Reg-GPU", buttoncallbackReg, (void *)&config, cv::QT_RADIOBOX, 0);
+    
+    bool stab = false;
+    cv::createButton("stab", buttoncallbackStab, (void *)&stab, cv::QT_PUSH_BUTTON, 0);
 
+    Tracker tracker;
     while (true) {
 	try {
-	    cv::equalizeHist(config.image, dis);
-	    //clahe->apply(config.image, dis);
+	    // stabilization
+	    config.image.copyTo(dis);
+	    if (stab==true) {
+		tracker.processImage(dis);
+		cv::Mat invTrans = tracker.rigidTransform.inv();
+		warpAffine(dis,dis,invTrans.rowRange(0,2),cv::Size());
+	    }
+	    cv::equalizeHist(dis, dis);
+	    //cv::equalizeHist(config.image, dis);
+	    //clahe->apply(dis, dis);
 	    cv::imshow("image", dis);
 
 	    char c = (char)cv::waitKey(30);
