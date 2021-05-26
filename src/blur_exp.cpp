@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     cv::createButton("NUC[Flat]", buttoncallbackFlat, (void *)&config, cv::QT_PUSH_BUTTON, 0);
     // alg button
     cv::createButton("raw", buttoncallbackNO, (void *)&config, cv::QT_RADIOBOX, 1);
-    //cv::createButton("NUC-only", buttoncallbackNUC, (void *)&config, cv::QT_RADIOBOX, 0);
+    cv::createButton("NUC-only", buttoncallbackNUC, (void *)&config, cv::QT_RADIOBOX, 0);
     cv::createButton("IIR-only", buttoncallbackIIR, (void *)&config, cv::QT_RADIOBOX, 0);
     cv::createButton("Reg-GPU", buttoncallbackReg, (void *)&config, cv::QT_RADIOBOX, 0);
     
