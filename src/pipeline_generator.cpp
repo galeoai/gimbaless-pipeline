@@ -1,6 +1,10 @@
 #include "Halide.h"
 #define PATCH_SIZE 32
-#define RADIUS 5
+#define RADIUS 3
+#define a 5
+#define b 15
+#define m 0.9f/(a-b)
+
 
 using namespace Halide;
 using namespace Halide::ConciseCasts;  // for i32
@@ -28,10 +32,12 @@ public:
                                      i32(img2(x + dx + patch.x, y + dy + patch.y))));
 
         shift(x, y) = argmin(search, diff(PATCH_SIZE * x, PATCH_SIZE * y, search.x, search.y));
-
-        output(x, y) = cast<uint8_t>(0.2f * nuc(x, y) +
-                                     0.8f * img2(x + shift(x / PATCH_SIZE, y / PATCH_SIZE)[0],
-                                                 y + shift(x / PATCH_SIZE, y / PATCH_SIZE)[1]));
+	Expr d = abs(f32(nuc(x, y)) - f32(img2(x + shift(x / PATCH_SIZE, y / PATCH_SIZE)[0],
+					       y + shift(x / PATCH_SIZE, y / PATCH_SIZE)[1])));
+	Expr alpha = clamp(m*(d-b),0.0f,0.99f);
+        output(x, y) = cast<uint8_t>((1.0f-alpha) * nuc(x, y) +
+                                     alpha * img2(x + shift(x / PATCH_SIZE, y / PATCH_SIZE)[0],
+						  y + shift(x / PATCH_SIZE, y / PATCH_SIZE)[1]));
 
         // STMT output
         //Func output_stmt;

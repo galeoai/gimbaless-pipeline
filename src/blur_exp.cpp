@@ -7,6 +7,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
+#include <opencv2/photo.hpp>
 #include <opencv2/videoio.hpp>
 #include <stdio.h>
 #include <unistd.h>
@@ -168,11 +169,11 @@ int main(int argc, char *argv[]) {
     config.pixelFormat = "Mono8";
     config.grabberIndex = 0;
     config.cameraIndex = 0;
-    config.exposure = 1000.0;
+    config.exposure = 100.0;
     config.fps = 300;
     config.image = cv::Mat::zeros(config.width, config.height, CV_8UC1);
     config.offset = cv::Mat::zeros(config.width, config.height, CV_8UC1);
-    config.gain = cv::Mat::zeros(config.width, config.height, CV_32F);
+    config.gain = cv::Mat::ones(config.width, config.height, CV_32F);
     config.process = bypass;
 
     setup(config);
