@@ -8,9 +8,9 @@ set(CMAKE_CXX_EXTENSIONS NO)
 
 # OpenCV
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
 # find CUDA
 find_package(CUDA REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
 # Find Halide
 find_package(Halide REQUIRED)
 
