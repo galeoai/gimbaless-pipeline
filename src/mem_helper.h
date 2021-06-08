@@ -15,9 +15,6 @@
 inline void gpuAssert(cudaError_t code, const char *file, int line, 
     bool abort = false);
 
-template<typename T>
-int Ff();
-
 namespace mem {
 
     template<typename T>

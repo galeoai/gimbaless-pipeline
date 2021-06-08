@@ -87,7 +87,6 @@ int main(int argc, char *argv[]) {
         tmp_image = images[i] + noise;
         imshow("gimbaless", tmp_image);
         cv::waitKey(1000);
-        usleep(1000 * 20);
         ++i;
         i %= images.size();
     }
